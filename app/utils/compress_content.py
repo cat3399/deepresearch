@@ -121,7 +121,8 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
                     
             if response_text is None:
                 raise Exception("连续3次调用均失败")
-            
+            if response_text.rstrip().startswith("<think>"):
+                    response_text = response_text.split("</think>",maxsplit=1)[-1]
             processing_time = time.time() - start_time
             
             try:
@@ -211,7 +212,8 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
                     
             if response_text is None:
                 raise Exception("连续3次调用均失败")
-            
+            if response_text.rstrip().startswith("<think>"):
+                response_text = response_text.split("</think>",maxsplit=1)[-1]
             processing_time = time.time() - start_time
             
             try:
@@ -255,10 +257,12 @@ def compress_url_content(url: str, user_input: str, title: str = "",target_type:
     Raises:
         Exception: 当API调用或内容处理失败时
     """
+    text = ""
     if COMPRESS_API_TYPE == "GEMINI":
-        return by_gemini(url,user_input,title,target_type)
+        text = by_gemini(url,user_input,title,target_type)
     else:
-        return by_openai(url,user_input,title,target_type)
+        text = by_openai(url,user_input,title,target_type)
+    return text
 
 if __name__ == "__main__":
     # 示例用法
