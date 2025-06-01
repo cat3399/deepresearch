@@ -62,7 +62,7 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
                     {
                         "parts": [
                             {
-                                "text": f"用户需要的信息:{user_input}\n\n 网页端标题与摘要是{title} 网页的url是{url} 网页内容:{html_content[:70000:]}"
+                                "text": f"用户需要的信息:{user_input}\n\n 网页的标题与摘要是{title} 网页的url是{url} 网页内容:{html_content[:70000:]}"
                             }
                         ]
                     }
@@ -184,7 +184,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             # 准备消息
             messages = [
                 {'role':'system','content':SYSTEM_PROMPT},
-                {'role':'user','content':f"用户需要的信息:{user_input}\n\n 网页端标题与摘要是{title} 网页的url是{url} 网页内容:{html_content[:70000:]}"}
+                {'role':'user','content':f"用户需要的信息:{user_input}\n\n 网页的标题与摘要是{title} 网页的url是{url} 网页内容:{html_content[:70000:]}"}
             ]
             
             client = OpenAI(api_key=COMPRESS_API_KEY,base_url=COMPRESS_API_URL)
