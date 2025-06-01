@@ -8,7 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
-
+app/tests/
 *.txt
 *.log
 *.tmp
