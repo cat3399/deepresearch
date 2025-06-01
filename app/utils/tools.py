@@ -35,6 +35,8 @@ def response2json(text: str, mode: str = "json_str") -> Union[Dict, List, None]:
     返回:
         dict/list/None: 成功时返回解析后的 JSON 对象或列表, 失败时返回 None
     """
+    if text.rstrip(" ").startswith("<think>"):
+        text = text.split("</think>",maxsplit=1)[-1]
     text = re.sub(r'/\*.*?\*/', '', text, flags=re.DOTALL)
     
     pattern_json_obj = r"({.*})"  # 匹配 JSON 对象: 第一个 { 到最后一个 }
