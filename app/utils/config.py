@@ -92,10 +92,6 @@ def validate_config():
         warnings.append("使用基础对话模型作为搜索关键词生成模型")
     
     # 检查压缩模型配置
-    if not COMPRESS_API_TYPE:
-        errors.append("缺少网页内容压缩提取模型类型配置")
-    elif COMPRESS_API_TYPE not in ["GEMINI", "OPENAI"]:
-        errors.append(f"不支持的压缩模型API类型: {COMPRESS_API_TYPE},支持的类型为 GEMINI 或 OPENAI")
     if not COMPRESS_API_KEY:
         errors.append("缺少网页内容压缩提取模型API密钥")
     if not COMPRESS_API_URL:
