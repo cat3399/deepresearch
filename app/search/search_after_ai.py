@@ -174,7 +174,7 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
     time_page = search_request.time_page
     logging.info(f"开始搜索 - 目的: {search_purpose}")
     
-    with ThreadPoolExecutor(max_workers=min(SEARCH_API_LIMIT, len(search_request.query_keys))) as executor:
+    with ThreadPoolExecutor(max_workers=SEARCH_API_LIMIT) as executor:
         futures = []
         for data in search_request.query_keys:
             query = data.key
@@ -254,7 +254,7 @@ def deepscan(search_response: list, search_request: SearchRequest) -> SearchResu
     search_purpose = search_request.search_purpose
     # 使用多线程并发处理URL内容获取
     if search_response:
-        with ThreadPoolExecutor(max_workers=min(CRAWL_THREAD_NUM, len(search_response))) as executor:
+        with ThreadPoolExecutor(max_workers=CRAWL_THREAD_NUM) as executor:
             futures = {}
             for i, result in enumerate(search_response):
                 url = result['url']
