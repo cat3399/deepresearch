@@ -51,7 +51,7 @@ def _search_valuable_results(
     logging.info(f"开始搜索 - 目的: {search_purpose}")
 
     with ThreadPoolExecutor(
-        max_workers=min(SEARCH_API_LIMIT, len(search_request.query_keys))
+        max_workers=SEARCH_API_LIMIT
     ) as executor:
         futures = []
         for data in search_request.query_keys:
@@ -93,7 +93,7 @@ def _search_valuable_results(
             for result in unique_results
             if result.get("url", "").strip() not in stripped_excluded_set
         ]
-
+    logging.info(f"排除了 {len(new_results)-len(unique_results)} 个结果")
     if not unique_results:
         logging.warning("没有找到任何搜索结果")
         # 返回一个空的 SearchResults 对象而不是字典
@@ -143,8 +143,8 @@ def generate_search_plan(messages: list[dict], web_reference: str = "", previous
             previous_search_plan=previous_plan,
             previous_search_results=previous_results,
         )
-        # print(prompt)
-        print("previous_plan",previous_plan)
+    print(prompt)
+        # print("previous_plan",previous_plan)
     try:
         llm_rsp = client.chat.completions.create(
             model=SEARCH_KEYWORD_MODEL,
@@ -183,7 +183,6 @@ def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None)
     """
     if excluded_urls is None:
         excluded_urls = [""]
-    print("excluded_urls:",excluded_urls)
     logging.info(f"执行搜索计划: {search_plan_step}")
     search_request = json2SearchRequests(search_plan_step)
     if not search_request:
@@ -193,7 +192,6 @@ def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None)
     search_results = _search_valuable_results(
         search_request=search_request, excluded_urls=excluded_urls
     )
-
     if not search_results.results:
         logging.warning("未能从搜索中获取到结果。")
         return SearchResults(search_request=search_request, results=[])
@@ -206,7 +204,7 @@ def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None)
         search_purpose=search_request.search_purpose,
         max_num=max_valuable_urls,
     )
-    # print(value_url_prompt)
+    print("value_url_prompt: ",value_url_prompt)
     try:
         llm_rsp_value = client.chat.completions.create(
             model=SEARCH_KEYWORD_MODEL,
@@ -225,7 +223,6 @@ def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None)
 
         llm_rsp_content_value = llm_rsp_value.choices[0].message.content
         url_num_list_json = response2json(llm_rsp_content_value)
-
         valuable_results_data = []
         if isinstance(url_num_list_json, list):
             search_results_dict = search_results.to_dict()
@@ -249,42 +246,6 @@ def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None)
     except Exception as e:
         logging.error(f"执行搜索计划时出错: {str(e)}")
         return search_results
-
-
-def deepresearch_core(
-    prompt: str = "", excluded_urls: list[str] = None
-) -> tuple[SearchResults, list]:
-    """保持向后兼容的函数，内部调用新的分离函数"""
-    if excluded_urls is None:
-        excluded_urls = [""]
-
-    llm_rsp = client.chat.completions.create(
-        model=SEARCH_KEYWORD_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-        stream=False,
-    )
-    llm_rsp_content = llm_rsp.choices[0].message.content
-
-    try:
-        completion_tokens = llm_rsp.usage.completion_tokens
-        total_tokens = llm_rsp.usage.total_tokens
-        logging.debug(f"输出tokens: {completion_tokens}")
-        logging.debug(f"总共花费tokens: {total_tokens}")
-    except AttributeError:
-        logging.debug("无法获取 token 使用情况。")
-
-    parsed_rsp = response2json(llm_rsp_content)
-    steps = parsed_rsp.get("steps", [])
-
-    if steps:
-        search_plan_step = steps[0]
-        search_results = execute_search_plan(search_plan_step, excluded_urls)
-        return search_results, steps
-    else:
-        logging.info("LLM未能生成搜索计划。")
-        return SearchResults(), []
-
 
 def deepresearch_tool(messages: list[dict]):
     executed_search_plans = []
@@ -319,6 +280,7 @@ def deepresearch_tool(messages: list[dict]):
     current_results = execute_search_plan(executed_plan_item)
     executed_search_plans.append(executed_plan_item)
     accumulated_search_results.merge(current_results)
+    excluded_urls = accumulated_search_results.get_urls()
     yield "✅ 搜索计划1执行完成\n\n"
 
     plan_counter = 2
@@ -346,8 +308,9 @@ def deepresearch_tool(messages: list[dict]):
         
         # 执行搜索计划
         yield f"🔄 **执行搜索计划{plan_counter}**\n"
-        current_results = execute_search_plan(executed_plan_item)
+        current_results = execute_search_plan(executed_plan_item,excluded_urls=excluded_urls)
         accumulated_search_results.merge(current_results)
+        excluded_urls += accumulated_search_results.get_urls()
         executed_search_plans.append(executed_plan_item)
         yield f"✅ 搜索计划{plan_counter}执行完成\n\n"
         plan_counter += 1
