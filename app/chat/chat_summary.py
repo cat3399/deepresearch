@@ -61,6 +61,7 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
                 model=model,
                 messages=messages,
                 stream=True,
+                temperature=0.1,
                 stream_options={"include_usage": True}
             )
             for chunk in completion:
