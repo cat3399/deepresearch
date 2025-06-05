@@ -26,12 +26,14 @@ FIRECRAWL_API_URL = os.getenv("FIRECRAWL_API_URL", "https://api.firecrawl.dev")
 FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
 # Crawl4AI配置
 CRAWL4AI_API_URL = os.getenv("CRAWL4AI_API_URL")
+# 是否使用本地 Crawl4AI, 不依赖 HTTP API
+CRAWL4AI_LOCAL = os.getenv("CRAWL4AI_LOCAL", "false").lower() in ("1", "true", "yes")
 FIRECRAWL_API_URL = FIRECRAWL_API_URL.rstrip('/')
 if FIRECRAWL_API_URL == "https://api.firecrawl.dev" and not FIRECRAWL_API_KEY:
     print("使用Firecrawl需要填写key 从https://www.firecrawl.dev/获取")
     FIRECRAWL_API_URL = ''
 
-if not FIRECRAWL_API_URL and not CRAWL4AI_API_URL:
+if not FIRECRAWL_API_URL and not CRAWL4AI_API_URL and not CRAWL4AI_LOCAL:
     print("至少需要填写一种获取网页内容的方式")
     raise ValueError("至少需要填写一种获取网页内容的方式")
 CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM"))

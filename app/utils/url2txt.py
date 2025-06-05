@@ -14,7 +14,7 @@ print(ROOT_DIR)
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from app.utils.config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL
+from app.utils.config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL,CRAWL4AI_LOCAL
 print(f"使用的FIRECRAWL_API_URL: {FIRECRAWL_API_URL}")
 print(f"使用的FIRECRAWL_API_KEY: {FIRECRAWL_API_KEY}")
 print(f"使用的CRAWL4AI_API_URL: {CRAWL4AI_API_URL}")
@@ -83,10 +83,28 @@ def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) -> Optional[str]:
         data = {"url": url}
         response = requests.post(crawl_url, json=data, timeout=35)
         # print(response.text)
-        return response.json()['markdown']   
+        return response.json()['markdown']
     except Exception as e:
         print(f"crawl4ai抓取 {url} 失败: {str(e)}")
-        return 'error'  
+        return 'error'
+
+def by_crawl4ai_local(url: str) -> Optional[str]:
+    """使用本地 Crawl4AI 库抓取网页内容"""
+    try:
+        import asyncio
+        from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
+
+        async def _run(u: str) -> str:
+            async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
+                result = await crawler.arun(u, config=CrawlerRunConfig(cache_mode=CacheMode.BYPASS))
+                if result and getattr(result, 'success', False):
+                    return getattr(result, 'markdown', '')
+                return ''
+
+        return asyncio.run(_run(url))
+    except Exception as e:
+        print(f"crawl4ai本地抓取 {url} 失败: {str(e)}")
+        return 'error'
 
 def url_to_markdown(url: str) -> Optional[str]:
     """
@@ -113,24 +131,28 @@ def url_to_markdown(url: str) -> Optional[str]:
                 elif result != 'error' and len(result) > len(best_result):
                     best_result = result  # 保存最佳结果
                 
-            if CRAWL4AI_API_URL:
-                # 尝试使用crawl4ai抓取
+            result = ''
+            if CRAWL4AI_LOCAL:
+                # 使用本地 Crawl4AI
+                result = by_crawl4ai_local(url)
+            elif CRAWL4AI_API_URL:
+                # 尝试使用远程 crawl4ai 接口抓取
                 result = by_crawl4ai(url)
-                # print(result)
-                if result and result != 'error':
-                    if len(result) > 1000:
-                        print(f'使用crawl4ai抓取 {url} 成功 \n')
-                        return result
-                    elif len(result) > len(best_result):
-                        best_result = result  # 保存最佳结果
-                        print('保存crawl4ai结果,但继续尝试获取更好的结果')
-                    else:
-                        print('crawl4ai结果过短,继续尝试')
-                
-                # 如果两种方法都没有产生足够长的结果,增加尝试次数
-                attempt_count += 1
-                if attempt_count < max_attempts:
-                    print(f"结果长度不足,第 {attempt_count+1} 次尝试抓取...")
+
+            if result and result != 'error':
+                if len(result) > 1000:
+                    print(f'使用crawl4ai抓取 {url} 成功 \n')
+                    return result
+                elif len(result) > len(best_result):
+                    best_result = result  # 保存最佳结果
+                    print('保存crawl4ai结果,但继续尝试获取更好的结果')
+                else:
+                    print('crawl4ai结果过短,继续尝试')
+
+            # 如果两种方法都没有产生足够长的结果,增加尝试次数
+            attempt_count += 1
+            if attempt_count < max_attempts:
+                print(f"结果长度不足,第 {attempt_count+1} 次尝试抓取...")
                 
         except Exception as e:
             print(f"抓取失败: {str(e)}")
