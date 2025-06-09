@@ -10,6 +10,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from app.utils.config import SUMMARY_MODEL
 from app.utils.prompt import SYS_PROMPT
+from app.utils.tools import get_time
 from app.chat.functions import process_messages,process_messages_stream
 
 SHOW_MODEL = "search-llm"
@@ -24,15 +25,13 @@ def register_routes(app):
             return make_response(jsonify({"error": "Invalid API Key sk-1"}), 401)
         
         data = request.get_json()
-        if "re-search" in data.get("model"):
-            search_mode = 2
         if "deep-research" in data.get("model"):
-            search_mode = 3
+            search_mode = 2
         if not data or "messages" not in data:
             return make_response(jsonify({"error": "传入数据有问题!"}), 400)
         
         messages = [msg for msg in data["messages"] if msg.get('role') != 'system']
-        messages = [{'role': 'system', 'content': SYS_PROMPT}] + messages
+        messages = [{'role': 'system', 'content': SYS_PROMPT.substitute(current_time=get_time())}] + messages
         # 检查 stream 参数
         STREAM_MODE = data.get("stream", False)
         if STREAM_MODE:

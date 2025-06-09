@@ -20,11 +20,12 @@ from app.search.search_searxng_api import search_api_worker
 from app.utils.black_url import URL_BLACKLIST
 # from app.utils.compress_content import compress_url_content # 似乎未使用，可以考虑移除
 from app.utils.config import (SEARCH_API_LIMIT,
-                              SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL,
-                              SEARCH_KEYWORD_MODEL)
+                              SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL,SEARCH_KEYWORD_MODEL,
+                              EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL, EVALUATE_THREAD_NUM
+                              )
 from app.utils.prompt import (DEEPRESEARCH_FIRST_PROMPT,
                               DEEPRESEARCH_NEXT_PROMPT, GET_VALUE_URL_PROMPT)
-from app.utils.tools import (format_search_plan, get_time,
+from app.utils.tools import (format_search_plan, format_urls, get_time,
                              json2SearchRequests, response2json)
 
 
@@ -143,7 +144,7 @@ def generate_search_plan(messages: list[dict], web_reference: str = "", previous
             previous_search_plan=previous_plan,
             previous_search_results=previous_results,
         )
-    print(prompt)
+    # print(prompt)
         # print("previous_plan",previous_plan)
     try:
         llm_rsp = client.chat.completions.create(
@@ -170,7 +171,7 @@ def generate_search_plan(messages: list[dict], web_reference: str = "", previous
         return []
 
 
-def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None) -> SearchResults:
+def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None) -> SearchResults:
     """
     执行单个搜索计划步骤
     
@@ -203,11 +204,13 @@ def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None)
         search_results=search_results.to_str(),
         search_purpose=search_request.search_purpose,
         max_num=max_valuable_urls,
+        search_restrictions=search_request.search_restrictions
     )
-    print("value_url_prompt: ",value_url_prompt)
+    # print("value_url_prompt: ",value_url_prompt)
     try:
+        client = OpenAI(api_key=EVALUATE_API_KEY, base_url=EVALUATE_API_URL)
         llm_rsp_value = client.chat.completions.create(
-            model=SEARCH_KEYWORD_MODEL,
+            model=EVALUATE_MODEL,
             messages=[{"role": "user", "content": value_url_prompt}],
             temperature=0.1,
             stream=False,
@@ -249,17 +252,17 @@ def execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None)
 
 def deepresearch_tool(messages: list[dict]):
     executed_search_plans = []
-    max_plan_iterations = 8
+    max_plan_iterations = 12
     accumulated_search_results = SearchResults()
     yield "🔍 **开始深度研究搜索...**\n\n"
 
     # 执行初始搜索获取参考信息
-    yield "📋 **执行初始搜索获取参考信息**\n"
+    yield "📋 **初始搜索获取参考信息**\n"
     search_reference_results = search_core(messages=str(messages), deep=False)
     yield "✅ 初始搜索完成\n\n"
 
     # 生成第一个搜索计划
-    yield "🎯 **生成第一个搜索计划**\n"
+    yield "📌 **生成第一个搜索计划**\n"
     current_search_plan_steps = generate_search_plan(
         messages=messages,
         web_reference=search_reference_results.to_str() if search_reference_results else ""
@@ -277,7 +280,8 @@ def deepresearch_tool(messages: list[dict]):
     
     # 执行第一个搜索计划
     yield "🔄 **执行第一个搜索计划**\n"
-    current_results = execute_search_plan(executed_plan_item)
+    current_results = _execute_search_plan(executed_plan_item)
+    yield from format_urls(current_results.get_urls())
     executed_search_plans.append(executed_plan_item)
     accumulated_search_results.merge(current_results)
     excluded_urls = accumulated_search_results.get_urls()
@@ -286,44 +290,49 @@ def deepresearch_tool(messages: list[dict]):
     plan_counter = 2
     
     # 继续生成和执行后续搜索计划
-    while len(executed_search_plans) < max_plan_iterations:
-        yield f"📊 **已执行的搜索计划数量：** {len(executed_search_plans)}/{max_plan_iterations}\n"
-        
-        # 生成下一个搜索计划
-        yield f"🎯 **步骤{plan_counter}：生成下一个搜索计划**\n"
-        current_search_plan_steps = generate_search_plan(
-            messages=messages,
-            previous_plan=str(executed_search_plans),
-            previous_results=accumulated_search_results.to_str(),
-            max_remaining_steps=max_plan_iterations - len(executed_search_plans)
-        )
+    try:
+        while len(executed_search_plans) < max_plan_iterations:
+            yield f"📊 **已执行的搜索计划数量：** {len(executed_search_plans)}/{max_plan_iterations}\n"
+            # 生成下一个搜索计划
+            yield f"📌 **步骤{plan_counter}：生成下一个搜索计划**\n"
+            print(executed_search_plans[0])
+            current_search_plan_steps = generate_search_plan(
+                messages=messages,
+                previous_plan=str([plan.get("search_purpose",'') for plan in executed_search_plans]),
+                previous_results=accumulated_search_results.to_str(),
+                max_remaining_steps=max_plan_iterations - len(executed_search_plans)
+            )
 
-        if not current_search_plan_steps or len(current_search_plan_steps) == 0:
-            yield "🏁 **未能生成新的搜索计划，信息获取完毕，深度研究提前完成**\n\n"
-            break
+            if not current_search_plan_steps or len(current_search_plan_steps) == 0:
+                yield "🏁 **未能生成新的搜索计划，信息获取完毕，深度研究提前完成**\n\n"
+                break
 
-        # 显示搜索计划
-        executed_plan_item = current_search_plan_steps[0]
-        yield from format_search_plan(executed_plan_item)
-        
-        # 执行搜索计划
-        yield f"🔄 **执行搜索计划{plan_counter}**\n"
-        current_results = execute_search_plan(executed_plan_item,excluded_urls=excluded_urls)
-        accumulated_search_results.merge(current_results)
-        excluded_urls += accumulated_search_results.get_urls()
-        executed_search_plans.append(executed_plan_item)
-        yield f"✅ 搜索计划{plan_counter}执行完成\n\n"
-        plan_counter += 1
+            # 显示搜索计划
+            executed_plan_item = current_search_plan_steps[0]
+            yield from format_search_plan(executed_plan_item)
+            
+            # 执行搜索计划
+            yield f"🔄 **执行搜索计划{plan_counter}**\n"
+            current_results = _execute_search_plan(executed_plan_item,excluded_urls=excluded_urls)
+            yield from format_urls(current_results.get_urls())
+            accumulated_search_results.merge(current_results)
+            excluded_urls += accumulated_search_results.get_urls()
+            executed_search_plans.append(executed_plan_item)
+            yield f"✅ 搜索计划{plan_counter}执行完成\n\n"
+            plan_counter += 1
 
-    # 处理循环结束后的情况
-    if len(executed_search_plans) >= max_plan_iterations:
-        yield f"🏁 **已达到最大搜索计划数量({max_plan_iterations})，深度研究完成**\n\n"
-    elif not executed_search_plans:
-        yield "🏁 **未能执行任何搜索计划，深度研究结束**\n\n"
-    else:
-        yield "🏁 **深度研究完成**\n\n"
+        # 处理循环结束后的情况
+        if len(executed_search_plans) >= max_plan_iterations:
+            yield f"🏁 **已达到最大搜索计划数量({max_plan_iterations})，深度研究完成**\n\n"
+        elif not executed_search_plans:
+            yield "🏁 **未能执行任何搜索计划，深度研究结束**\n\n"
+        else:
+            yield "🏁 **深度研究完成**\n\n"
 
-    yield "✅ **深度研究搜索完成**\n"
+        yield "✅ **深度研究搜索完成**\n"
+    except:
+        traceback.print_exc()
+        yield "🚫 **研究过程出现意外,强行终止**"
     
     # 将结果写入文件
     try:

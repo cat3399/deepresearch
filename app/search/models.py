@@ -22,9 +22,8 @@ class QueryKeys:
 class SearchRequest:
     """搜索请求数据类，包含搜索查询的基本参数"""
     
-    def __init__(self, query_keys: List[QueryKeys] = [QueryKeys()], time_page: list[int] = [0,0,0], search_purpose: str = "", max_search_results: int = MAX_SEARCH_RESULTS):
+    def __init__(self, query_keys: List[QueryKeys] = [QueryKeys()], time_page: list[int] = [0,0,0], search_purpose: str = "", search_restrictions: str = "", max_search_results: int = MAX_SEARCH_RESULTS):
 
-        self.query_keys = query_keys
             
         # 确保时间范围格式正确，如果为空或格式错误则使用默认值
         if not time_page or not isinstance(time_page, list) or len(time_page) != 3:
@@ -38,6 +37,8 @@ class SearchRequest:
         # self.keys = [query_key.key for query_key in self.query_keys]
         # self.language = [query_key.language for query_key in self.query_keys]
         self.search_purpose = search_purpose
+        self.search_restrictions = search_restrictions
+        self.query_keys = query_keys
         self.max_search_results = max_search_results if max_search_results else MAX_SEARCH_RESULTS
     
     def __str__(self) -> str:
@@ -98,6 +99,10 @@ class SearchResults:
 
     def get_urls(self) -> list[str]:
         return [result.url for result in self.results]
+
+    def get_search_surpose(self) -> str:
+        """获取搜索目的"""
+        return self.search_request.search_purpose
 
     def add_result(self, result: SearchResult) -> None:
         """添加一个搜索结果"""

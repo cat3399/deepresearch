@@ -20,6 +20,7 @@ from app.utils.black_url import URL_BLACKLIST
 from app.utils.compress_content import compress_url_content
 from app.utils.config import \
     SEARCH_KEYWORD_MODEL, SEARCH_API_LIMIT, SEARCH_KEYWORD_API_KEY,  SEARCH_KEYWORD_API_URL, MAX_SEARCH_RESULTS,\
+    EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL, \
     EVALUATE_THREAD_NUM,\
     CRAWL_THREAD_NUM
 from app.utils.prompt import RELEVANCE_EVALUATION_PROMPT
@@ -65,6 +66,10 @@ def is_duplicate(new_result, existing_results):
 
 def evaluate_single_batch(batch_idx : int, batch : List[Dict], search_purpose : str):
     """评估单批次搜索结果的相关性"""
+    client = OpenAI(
+        api_key=EVALUATE_API_KEY,
+        base_url=EVALUATE_API_URL
+    )
     # 构造格式化后的结果文本
     formatted_results = [
         f"索引 {idx}:\n标题: {result.get('title', '无标题')}\n内容摘要: {result.get('content', '')[:200]}\nURL: {result.get('url', '')}"
@@ -86,7 +91,7 @@ def evaluate_single_batch(batch_idx : int, batch : List[Dict], search_purpose : 
         try:
             messages = [{"role": "user", "content": evaluation_prompt}]
             response = client.chat.completions.create(
-                model=SEARCH_KEYWORD_MODEL,
+                model=EVALUATE_MODEL,
                 messages=messages,
                 temperature=0.1,
                 stream=False

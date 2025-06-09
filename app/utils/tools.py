@@ -230,9 +230,9 @@ def json2SearchRequests(data: dict) -> SearchRequest:
         list[SearchRequest]: SearchRequest对象列表
     """
     search_purpose = data.get('search_purpose', '')
+    search_restrictions = data.get('search_restrictions','')
     search_data = data.get('data', [])
     time_page = data.get('time_page', '')
-    
     # 验证search_data是列表
     if not isinstance(search_data, list):
         return []
@@ -240,7 +240,8 @@ def json2SearchRequests(data: dict) -> SearchRequest:
     search_request = SearchRequest(
             query_keys=[QueryKeys(key=r.get('keys', ''),language=r.get('language', 'zh_CN')) for r in search_data],
             time_page=time_page,
-            search_purpose=search_purpose
+            search_purpose=search_purpose,
+            search_restrictions=search_restrictions
         )
     
     return search_request
@@ -251,15 +252,26 @@ def format_search_plan(plan_info: dict):
     美化搜索计划输出的生成器函数 - 二级菜单样式
     """
     search_purpose = plan_info.get('search_purpose', '未知')
+    search_restrictions = plan_info.get('search_restrictions', '无')
     search_keywords = [item.get('keys', '') for item in plan_info.get('data', [])]
     
-    yield f"📌 **新的搜索计划：**\n"
     yield f"🎯 **搜索目的：** {search_purpose}\n"
+    yield f"⭕ **结果限制：** {search_restrictions}\n"
     yield f"🔍 **搜索关键词：**\n"
     
     for keyword in search_keywords:
         yield f"\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0➤ {keyword}\n"
 
+def format_pre_search_plan(plan_info: dict):
+    yield "我基于一些简易的搜索结果和你的要求,生成了一个初步的搜索计划\n"
+    yield from format_search_plan(plan_info)
+    yield "有什么需要修改的吗\n"
+
+def format_urls(urls: List[str]):
+    urls_str = ''
+    for url in urls:
+        urls_str += url + "  "
+    yield f"我查看了 {urls} 的网页内容"
 
 def chat_chat_completion():
     """

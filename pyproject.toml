@@ -4,4 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "crawl4ai>=0.6.3",
+    "dotenv>=0.9.9",
+    "flask-cors>=6.0.0",
+    "openai>=1.84.0",
+    "requests>=2.32.3",
+]

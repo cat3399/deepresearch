@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 import sys
 import time
+import ast
 from typing import Dict, Any, Callable
-from string import Template
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
 
@@ -12,10 +12,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from app.utils.tools import sse_create_openai_data, response2json, get_time, json2SearchRequests
+from app.utils.tools import sse_create_openai_data, response2json, get_time, format_pre_search_plan
 from app.utils.url2txt import url_to_markdown
-from app.utils.config import BASE_CHAT_API_KEY, BASE_CHAT_API_URL, BASE_CHAT_MODEL, SEARCH_KEYWORD_MODEL, SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL
-from app.utils.prompt import SEARCH_PROMPT,RE_SEARCH_PROMPT,FIRST_SEARCH_PROMPT, DATA_ADD_PROMPT
+from app.utils.config import BASE_CHAT_API_KEY, BASE_CHAT_API_URL, BASE_CHAT_MODEL
+from app.utils.prompt import DATA_ADD_PROMPT
 from app.search.search_after_ai import search_ai
 from app.search.fc_search import search_tool
 from app.search.fc_deepresearch import deepresearch_tool
@@ -63,49 +63,6 @@ registry = FunctionRegistry()
         'properties': {}}})(search_tool)
 
 
-def re_search_tool(messages: str):
-    def generate_search(input):
-        messages = [{'role': 'user', 'content': input}] 
-        client = OpenAI(
-            api_key=SEARCH_KEYWORD_API_KEY,
-            base_url=SEARCH_KEYWORD_API_URL
-        )
-        # print(input)
-        result = chat_completion(messages, client=client, chat_model=SEARCH_KEYWORD_MODEL)
-        return result
-    first_search_key = generate_search(input=FIRST_SEARCH_PROMPT.substitute(messages=messages,current_time=get_time()))
-    print(f"搜索关键词生成结果: {first_search_key.content}")
-    first_search_key = response2json(first_search_key.content)
-    if first_search_key is None:
-        print("!!!搜索关键词生成失败!!!")
-        yield "!!!搜索关键词生成失败!!!"
-    else:
-        search_purpose = first_search_key.get('search_purpose', '')
-        search_data = first_search_key.get('data', [])
-        time_page = first_search_key.get('time_page', '')
-        yield f"我正在深度的搜索 \n"
-        # time.sleep(0.3)
-        yield f"我设定的初步搜索目标是 {str(search_purpose)} \n"
-        # time.sleep(0.3)
-        # yield f"我将搜索{str(search_data)} \n"
-        # yield f"我将要搜索{len(search_data)}组关键词\n"
-        for r in search_data:
-            yield f"我正在搜索 {r['keys']} \n"
-        first_search_result = search_ai(search_data, search_purpose,time_page,deep=False).to_str()
-        search_key = generate_search(input=RE_SEARCH_PROMPT.substitute(messages=messages,current_time=get_time(),first_search_result=first_search_result))
-        print(f"搜索关键词生成结果: {search_key.content}")
-        search_key = response2json(search_key.content)
-        search_purpose = search_key.get('search_purpose', '')
-        search_data = search_key.get('data', [])
-        time_page = search_key.get('time_page', '')
-        yield f"我设定的最终搜索目标是 {str(search_purpose)} \n"
-        for r in search_data:
-            yield f"我正在搜索 {r['keys']} \n"
-        re_search_results = search_ai(search_data,search_purpose,time_page).to_str()
-        yield "results"+ str(re_search_results)
-        yield "我完成了搜索 \n"
-    
-
 # @registry.register({
 #     'description': '网页内容获取工具,能够根据url获取网页的markdown格式内容,支持一次性单个和多个url传入',
 #     'parameters': {
@@ -144,15 +101,12 @@ def chat_completion(messages: list, chat_model=BASE_CHAT_MODEL, client=CLIENT, u
         # 'stream_options':
         #     {"include_usage": True}
     }
-    
     if use_tools:
         request_data["tools"] = registry.tools
         response = client.chat.completions.create(**request_data)
     else:
         response = client.chat.completions.create(**request_data)
     
-    
-
     if not stream:
         # 打印响应信息
         processing_time = time.time() - start_time
@@ -175,18 +129,17 @@ def process_messages_stream(messages: list, search_mode: int = 1):
         delta = chunk.choices[0].delta
         # print(delta)
         try:
-            # 使用 'is not None' 风格更佳
             if delta.reasoning_content is not None:
                 yield sse_create_openai_data(reasoning_content=delta.reasoning_content)
         except Exception:
-            pass  # 忽略此步骤的任何错误，继续执行
+            pass
 
         try:
             if delta.content and delta.tool_calls is None:
                 content_result += delta.content
                 yield sse_create_openai_data(reasoning_content=delta.content)
         except Exception:
-            pass  # 忽略此步骤的任何错误，继续执行
+            pass 
 
         try:
             if tool_calls is None:
@@ -194,14 +147,9 @@ def process_messages_stream(messages: list, search_mode: int = 1):
             else:
                 tool_calls[0].function.arguments += delta.tool_calls[0].function.arguments
         except Exception:
-            pass  # 忽略此步骤的任何错误，继续执行
+            pass
 
-    # tool_calls_tmp = text2fc(assistant_rsp.content)
-    # tool_calls = getattr(assistant_rsp,'tool_calls', None)
-    # if not tool_calls:
-    #     tool_calls = tool_calls_tmp
     yield sse_create_openai_data(reasoning_content="\n\n")
-    # yield sse_create_openai_data(reasoning_content=r" \n\n ")
     if tool_calls:
         print(tool_calls)
         for tool_call in tool_calls:
@@ -212,19 +160,27 @@ def process_messages_stream(messages: list, search_mode: int = 1):
                     messages = messages[1:]
                 search_result = ""
                 if search_mode == 2:
-                    function_output = re_search_tool(str(messages))
-                elif search_mode == 3:
                     function_output = deepresearch_tool(str(messages))
                 else:
                     function_output = search_tool(str(messages))
                 for line in function_output:
+                    # if line.startswith("pre_plan"):
+                    #     pre_plan = ast.literal_eval(line[8:])
+                    #     pre_plan_format = format_pre_search_plan(pre_plan)
+                    #     pre_plan_str = ''
+                    #     for i in pre_plan_format:
+                    #         pre_plan_str += i
+                    #     yield sse_create_openai_data(content=pre_plan_str)
+                    #         # 兼容Cherry Studio
+                    #         # yield sse_create_openai_data(content='')
+                    #     return 
                     if line.startswith("results"):
                         search_result = str(line[7:])
                         messages[-1]['content'] = messages[-1]['content'] + DATA_ADD_PROMPT.substitute(current_time=get_time(),search_result=search_result)
                     elif line:
                         yield sse_create_openai_data(reasoning_content=line)
                         # 兼容Cherry Studio
-                        yield sse_create_openai_data('')
+                        # yield sse_create_openai_data('')
                 rsp_stream = summary(messages, stream=True)
                 for line in rsp_stream:
                     yield line

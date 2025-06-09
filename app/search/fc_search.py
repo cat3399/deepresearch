@@ -19,7 +19,6 @@ def search_core(messages: str, deep: bool = True):
         api_key=SEARCH_KEYWORD_API_KEY,
         base_url=SEARCH_KEYWORD_API_URL
     )
-    print(SEARCH_KEYWORD_MODEL)
     llm_rsp = client.chat.completions.create(
         model=SEARCH_KEYWORD_MODEL,
         messages=messages,
@@ -27,7 +26,7 @@ def search_core(messages: str, deep: bool = True):
         stream=False
     )
     results = response2json(llm_rsp.choices[0].message.content)
-    print(f"搜索关键词生成结果: {json.dumps(results,indent=4,ensure_ascii=False)}")
+    # print(f"搜索关键词生成结果: {json.dumps(results,indent=4,ensure_ascii=False)}")
 
     if results is None:
         print("!!!搜索关键词生成失败!!!")
