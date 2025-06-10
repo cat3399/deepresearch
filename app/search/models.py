@@ -86,7 +86,7 @@ class SearchResult:
 class SearchResults:
     """搜索结果集合类，表示一组搜索结果"""
     
-    def __init__(self, search_request:SearchRequest = SearchRequest(), results: Optional[List[SearchResult]] = None):
+    def __init__(self, search_request:SearchRequest = SearchRequest(), results: Optional[List[SearchResult]] = []):
         self.search_request = search_request
         self.results = results or []
     
@@ -98,7 +98,7 @@ class SearchResults:
                 f"results=[<{(self.results)} SearchResult objects>], ")
 
     def get_urls(self) -> list[str]:
-        return [result.url for result in self.results]
+        return [result.url for result in self.results if result.url]
 
     def get_search_surpose(self) -> str:
         """获取搜索目的"""

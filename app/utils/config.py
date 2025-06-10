@@ -1,5 +1,6 @@
 import os
 from string import Template
+import logging
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -10,7 +11,15 @@ if os.path.exists(env_path):
     load_dotenv(env_path)
     print("环境变量文件已加载")
 
-# class ModelConfig
+# 设置日志记录
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(ROOT_DIR.joinpath("app.log"), mode='a', encoding='utf-8')
+    ]
+)
 
 # SearXNG配置（需要支持JSON格式）
 SEARXNG_URL = os.getenv("SEARXNG_URL")
@@ -69,7 +78,7 @@ SUMMARY_API_URL = os.getenv("SUMMARY_API_URL", BASE_CHAT_API_URL)
 SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", BASE_CHAT_MODEL)
 
 MAX_RESEARCH_NUM = 3
-
+AVAILABLE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls']
 #############################################
 # 配置校验
 #############################################

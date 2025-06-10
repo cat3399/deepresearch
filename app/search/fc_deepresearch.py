@@ -225,9 +225,10 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
             logging.debug("无法获取价值URL筛选的 token 使用情况。")
 
         llm_rsp_content_value = llm_rsp_value.choices[0].message.content
+        print(f"LLM返回的价值URL编号: {llm_rsp_content_value}")
         url_num_list_json = response2json(llm_rsp_content_value)
         valuable_results_data = []
-        if isinstance(url_num_list_json, list):
+        if url_num_list_json and isinstance(url_num_list_json, list):
             search_results_dict = search_results.to_dict()
             for url_num_str in url_num_list_json:
                 key = f"网页{url_num_str}"
@@ -240,15 +241,19 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
 
         if not valuable_results_data:
             logging.warning("未能从LLM响应中提取到有价值的URL结果。")
-            return search_results
-
-        search_plan_result = deepscan(
-            search_response=valuable_results_data, search_request=search_request
-        )
-        return search_plan_result
+            return SearchResults(search_request=search_request)
+        print(f"有价值的搜索结果: {valuable_results_data}")
+        if valuable_results_data:
+            search_plan_result = deepscan(
+                search_response=valuable_results_data, search_request=search_request
+            )
+            return search_plan_result
+        else:
+            logging.warning("没有找到有价值的搜索结果。")
+            return SearchResults(search_request=search_request)
     except Exception as e:
         logging.error(f"执行搜索计划时出错: {str(e)}")
-        return search_results
+        return SearchResults(search_request=search_request)
 
 def deepresearch_tool(messages: list[dict]):
     executed_search_plans = []
@@ -281,6 +286,7 @@ def deepresearch_tool(messages: list[dict]):
     # 执行第一个搜索计划
     yield "🔄 **执行第一个搜索计划**\n"
     current_results = _execute_search_plan(executed_plan_item)
+    print(f"当前搜索结果: {current_results.to_str()}")
     yield from format_urls(current_results.get_urls())
     executed_search_plans.append(executed_plan_item)
     accumulated_search_results.merge(current_results)
@@ -295,7 +301,6 @@ def deepresearch_tool(messages: list[dict]):
             yield f"📊 **已执行的搜索计划数量：** {len(executed_search_plans)}/{max_plan_iterations}\n"
             # 生成下一个搜索计划
             yield f"📌 **步骤{plan_counter}：生成下一个搜索计划**\n"
-            print(executed_search_plans[0])
             current_search_plan_steps = generate_search_plan(
                 messages=messages,
                 previous_plan=str([plan.get("search_purpose",'') for plan in executed_search_plans]),

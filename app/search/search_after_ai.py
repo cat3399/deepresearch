@@ -255,7 +255,7 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
 def deepscan(search_response: list, search_request: SearchRequest) -> SearchResults:
     """获取网页的内容"""
     logging.info(f"开始深度扫描 {len(search_response)} 个URL")
-    search_results = SearchResults(search_request=search_request)
+    search_results_deepscan = SearchResults(search_request=search_request)
     search_purpose = search_request.search_purpose
     # 使用多线程并发处理URL内容获取
     if search_response:
@@ -287,32 +287,14 @@ def deepscan(search_response: list, search_request: SearchRequest) -> SearchResu
                 result_copy['mini_content'] = result.get('content', '')
                 result_copy['content'] = content
             results_with_content.append(result_copy)
-    
-        # 按照相关性评分降序排序
-        sorted_results = sorted(results_with_content, key=lambda x: x.get('relevance_score', 0), reverse=True)
-    
-        # 首尾交替插入排序：按顺序将重要的依次插入到结果列表的首尾位置
-        n = len(sorted_results)
-        interleaved_results = [None] * n
-        left = 0
-        right = n - 1
-        for idx, result in enumerate(sorted_results):
-            if idx % 2 == 0:
-                interleaved_results[left] = result
-                left += 1
-            else:
-                interleaved_results[right] = result
-                right -= 1
-    
-        # 构建最终返回结果
-        for i, result in enumerate(interleaved_results):
+        for i, result in enumerate(results_with_content):
             if result:  # 确保结果存在
                 url = result.get('url', '')
                 content = result.get('content', '')
                 title = result.get('title', '无标题')
                 relevance_score = result.get('relevance_score', 0)
-                search_results.add_result(SearchResult(url,title,content,relevance_score))
-    return search_results
+                search_results_deepscan.add_result(SearchResult(url,title,content,relevance_score))
+    return search_results_deepscan
 
 if __name__ == "__main__":
     # 示例使用

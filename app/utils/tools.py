@@ -11,7 +11,14 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Union
 
+from bs4 import BeautifulSoup
+import docx
+import fitz
 from openai import OpenAI
+import openpyxl
+from pydocx import PyDocX
+import requests
+import xlrd
 
 # 添加根目录到系统路径
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -19,7 +26,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.search.models import SearchRequest,QueryKeys
-
+from app.utils.config import AVAILABLE_EXTENSIONS
 
 def response2json(text: str, mode: str = "json_str") -> Union[Dict, List, None]:
     """
@@ -255,23 +262,146 @@ def format_search_plan(plan_info: dict):
     search_restrictions = plan_info.get('search_restrictions', '无')
     search_keywords = [item.get('keys', '') for item in plan_info.get('data', [])]
     
-    yield f"🎯 **搜索目的：** {search_purpose}\n"
+    yield f"🎯 **搜索预期：** {search_purpose}\n"
     yield f"⭕ **结果限制：** {search_restrictions}\n"
     yield f"🔍 **搜索关键词：**\n"
     
     for keyword in search_keywords:
         yield f"\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0➤ {keyword}\n"
 
-def format_pre_search_plan(plan_info: dict):
-    yield "我基于一些简易的搜索结果和你的要求,生成了一个初步的搜索计划\n"
-    yield from format_search_plan(plan_info)
-    yield "有什么需要修改的吗\n"
-
 def format_urls(urls: List[str]):
-    urls_str = ''
-    for url in urls:
-        urls_str += url + "  "
-    yield f"我查看了 {urls} 的网页内容"
+    """
+    美化URL列表输出的生成器函数
+    """
+    if not urls:
+        yield "📝 **未查看任何网页内容**\n"
+        return
+    
+    yield f"🌐 **已查看 {len(urls)} 个网页：**\n"
+    
+    for i, url in enumerate(urls, 1):
+        if url:
+            display_url = url if len(url) <= 100 else url[:120] + "..."
+            yield f"\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0{i}. {display_url}\n"
+    
+    yield "\n"
+
+DOWNLOAD_FILE_PATH = ROOT_DIR / "tmp_files"
+def download_file(url):
+    """
+    从指定 URL 下载文件，并保存到 DOWNLOAD_FILE_PATH 目录。
+    如果目录不存在，则创建该目录。
+    
+    Returns:
+        Path|str: 成功时返回文件路径(Path对象，布尔值为True)，失败时返回空字符串(布尔值为False)
+    """
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    
+    DOWNLOAD_FILE_PATH.mkdir(parents=True, exist_ok=True)
+    
+    # 检查文件扩展名
+    file_name = url.split('/')[-1]
+    file_extension = Path(file_name).suffix.lower()
+    if file_extension not in AVAILABLE_EXTENSIONS:
+        return ''
+    
+    file_path = DOWNLOAD_FILE_PATH / file_name
+    
+    try:
+        # 先发送HEAD请求检查文件大小（如果服务器支持）
+        head_response = requests.head(url, timeout=10)
+        if head_response.status_code == 200:
+            content_length = head_response.headers.get('Content-Length')
+            if content_length and int(content_length) > MAX_FILE_SIZE:
+                print(f"文件过大: {int(content_length) / (1024*1024):.1f}MB > 10MB")
+                return ''
+        
+        # 流式下载并限制大小
+        response = requests.get(url, timeout=30, stream=True)
+        response.raise_for_status()
+        
+        downloaded_size = 0
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    downloaded_size += len(chunk)
+                    if downloaded_size > MAX_FILE_SIZE:
+                        print(f"下载过程中发现文件过大: {downloaded_size / (1024*1024):.1f}MB > 10MB")
+                        # 删除部分下载的文件
+                        file_path.unlink(missing_ok=True)
+                        return ''
+                    f.write(chunk)
+        
+        return file_path  # Path对象，布尔值为True
+        
+    except requests.RequestException as e:
+        # 确保清理可能的部分文件
+        if file_path.exists():
+            file_path.unlink(missing_ok=True)
+        return ''  # 空字符串，布尔值为False
+    except Exception as e:
+        # 确保清理可能的部分文件  
+        if file_path.exists():
+            file_path.unlink(missing_ok=True)
+        return ''
+
+def extract_text_from_file(file_path):
+    """
+    根据文件类型，从文件中提取纯文本内容。
+    支持的格式: .pdf, .docx, .doc, .xlsx, .xls
+    Args:
+        file_path (str|Path): 文件路径，可以是字符串或Path对象
+    Returns:
+        str: 提取的文本内容，如果文件类型不支持或发生错误则返回错误信息
+    """
+    # 转换为 Path 对象以确保一致性
+    file_path = Path(file_path)
+    extension = file_path.suffix.lower()
+    
+    try:
+        if extension == '.pdf':
+            doc = fitz.open(file_path)
+            text = "".join(page.get_text() for page in doc)
+            doc.close()
+            return text
+
+        elif extension == '.docx':
+            doc = docx.Document(file_path)
+            return "\n".join([para.text for para in doc.paragraphs])
+
+        elif extension == '.doc':
+            html = PyDocX.to_html(str(file_path))  # PyDocX 可能需要字符串路径
+            soup = BeautifulSoup(html, 'html.parser')
+            return soup.get_text()
+
+        elif extension == '.xlsx':
+            text_parts = []
+            workbook = openpyxl.load_workbook(file_path)
+            for sheet in workbook.worksheets:
+                for row in sheet.iter_rows():
+                    for cell in row:
+                        if cell.value:
+                            text_parts.append(str(cell.value))
+            return "\n".join(text_parts)
+
+        elif extension == '.xls':
+            text_parts = []
+            workbook = xlrd.open_workbook(str(file_path))  # xlrd 可能需要字符串路径
+            for sheet in workbook.sheets():
+                for row_idx in range(sheet.nrows):
+                    for col_idx in range(sheet.ncols):
+                        cell_value = sheet.cell_value(row_idx, col_idx)
+                        if cell_value:
+                            text_parts.append(str(cell_value))
+            return "\n".join(text_parts)
+            
+        else:
+            return f"不支持的文件类型: {extension}"
+
+    except Exception as e:
+        print(f"处理文件 {file_path.name} 时出错: {e}")
+        return f"处理文件 {file_path} 时出错"
+# ...existing code...
 
 def chat_chat_completion():
     """

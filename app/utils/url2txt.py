@@ -14,7 +14,8 @@ print(ROOT_DIR)
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from app.utils.config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL
+from app.utils.config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL, AVAILABLE_EXTENSIONS
+from app.utils.tools import download_file,extract_text_from_file
 print(f"使用的FIRECRAWL_API_URL: {FIRECRAWL_API_URL}")
 print(f"使用的FIRECRAWL_API_KEY: {FIRECRAWL_API_KEY}")
 print(f"使用的CRAWL4AI_API_URL: {CRAWL4AI_API_URL}")
@@ -101,6 +102,15 @@ def url_to_markdown(url: str) -> Optional[str]:
     max_attempts = 2
     best_result = ''  # 存储最佳结果
     url = url.strip(' ')
+    
+    if url.endswith(tuple(AVAILABLE_EXTENSIONS)):
+        file_name = download_file(url)
+        if file_name:
+            # 如果是文件,直接提取文本
+            print(f"下载文件 {file_name} 成功,开始提取文本...")
+            result = extract_text_from_file(file_name)            
+            return result
+
     while attempt_count < max_attempts:
         try:
             # 尝试使用firecrawl抓取

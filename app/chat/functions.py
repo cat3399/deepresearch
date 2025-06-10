@@ -12,7 +12,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from app.utils.tools import sse_create_openai_data, response2json, get_time, format_pre_search_plan
+from app.utils.tools import sse_create_openai_data, response2json, get_time
 from app.utils.url2txt import url_to_markdown
 from app.utils.config import BASE_CHAT_API_KEY, BASE_CHAT_API_URL, BASE_CHAT_MODEL
 from app.utils.prompt import DATA_ADD_PROMPT
@@ -164,23 +164,11 @@ def process_messages_stream(messages: list, search_mode: int = 1):
                 else:
                     function_output = search_tool(str(messages))
                 for line in function_output:
-                    # if line.startswith("pre_plan"):
-                    #     pre_plan = ast.literal_eval(line[8:])
-                    #     pre_plan_format = format_pre_search_plan(pre_plan)
-                    #     pre_plan_str = ''
-                    #     for i in pre_plan_format:
-                    #         pre_plan_str += i
-                    #     yield sse_create_openai_data(content=pre_plan_str)
-                    #         # 兼容Cherry Studio
-                    #         # yield sse_create_openai_data(content='')
-                    #     return 
                     if line.startswith("results"):
                         search_result = str(line[7:])
                         messages[-1]['content'] = messages[-1]['content'] + DATA_ADD_PROMPT.substitute(current_time=get_time(),search_result=search_result)
                     elif line:
                         yield sse_create_openai_data(reasoning_content=line)
-                        # 兼容Cherry Studio
-                        # yield sse_create_openai_data('')
                 rsp_stream = summary(messages, stream=True)
                 for line in rsp_stream:
                     yield line
