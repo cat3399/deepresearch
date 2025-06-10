@@ -1,5 +1,6 @@
 import sys
 import json
+import logging
 from pathlib import Path
 
 from openai import OpenAI
@@ -29,7 +30,7 @@ def search_core(messages: str, deep: bool = True):
     # print(f"搜索关键词生成结果: {json.dumps(results,indent=4,ensure_ascii=False)}")
 
     if results is None:
-        print("!!!搜索关键词生成失败!!!")
+        logging.error("!!!搜索关键词生成失败!!!")
         return  ""
     else:
         search_request = json2SearchRequests(results)
@@ -38,7 +39,7 @@ def search_core(messages: str, deep: bool = True):
 
 def search_tool(messages: str):
     messages = [{'role': 'user', 'content': SEARCH_PROMPT.substitute(messages=messages, current_time=get_time())}]
-    print("调用普通搜索工具")
+    logging.info("调用普通搜索工具")
     client = OpenAI(
         api_key=SEARCH_KEYWORD_API_KEY,
         base_url=SEARCH_KEYWORD_API_URL
@@ -52,7 +53,10 @@ def search_tool(messages: str):
     )
     
     results = response2json(llm_rsp.choices[0].message.content)
-    print(f"🔍 搜索关键词生成结果：\n```json\n{json.dumps(results, indent=4, ensure_ascii=False)}\n```\n")
+    logging.info(
+        "🔍 搜索关键词生成结果：\n```json\n%s\n```\n",
+        json.dumps(results, indent=4, ensure_ascii=False),
+    )
     
     if results is None:
         yield "❌ **搜索关键词生成失败！**"
@@ -73,4 +77,4 @@ if __name__ == "__main__":
     messages = [{'role': 'user', 'content': '帮我搜一下最近openai新发布的那个模型的信息'}]
     search_results = search_tool(str(messages))
     for i in search_results:
-        print(i)
+        logging.info(i)

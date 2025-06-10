@@ -1,6 +1,7 @@
 import sys
 import requests
 import json
+import logging
 from typing import Optional
 import  os
 from pathlib import Path
@@ -8,7 +9,7 @@ from dotenv import load_dotenv
 
 # 获取项目根目录
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-print(ROOT_DIR)
+logging.info(ROOT_DIR)
 
 # 将项目根目录添加到sys.path
 if str(ROOT_DIR) not in sys.path:
@@ -16,10 +17,10 @@ if str(ROOT_DIR) not in sys.path:
 
 from app.utils.config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL, AVAILABLE_EXTENSIONS
 from app.utils.tools import download_file,extract_text_from_file
-print(f"使用的FIRECRAWL_API_URL: {FIRECRAWL_API_URL}")
-print(f"使用的FIRECRAWL_API_KEY: {FIRECRAWL_API_KEY}")
-print(f"使用的CRAWL4AI_API_URL: {CRAWL4AI_API_URL}")
-print()
+logging.info(f"使用的FIRECRAWL_API_URL: {FIRECRAWL_API_URL}")
+logging.info(f"使用的FIRECRAWL_API_KEY: {FIRECRAWL_API_KEY}")
+logging.info(f"使用的CRAWL4AI_API_URL: {CRAWL4AI_API_URL}")
+logging.info("")
 
 def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> Optional[str]:
     try:
@@ -45,7 +46,7 @@ def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> Optional[str]
         return markdown_str
         
     except Exception as e:
-        print(f"firecrawl抓取 {url} 失败: {str(e)}")
+        logging.error(f"firecrawl抓取 {url} 失败: {str(e)}")
         return 'error'
 
 # def by_crawl4ai(url: str, server_url: str = crawl4ai_api) -> Optional[str]:
@@ -86,8 +87,8 @@ def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) -> Optional[str]:
         # print(response.text)
         return response.json()['markdown']   
     except Exception as e:
-        print(f"crawl4ai抓取 {url} 失败: {str(e)}")
-        return 'error'  
+        logging.error(f"crawl4ai抓取 {url} 失败: {str(e)}")
+        return 'error'
 
 def url_to_markdown(url: str) -> Optional[str]:
     """
@@ -107,7 +108,7 @@ def url_to_markdown(url: str) -> Optional[str]:
         file_name = download_file(url)
         if file_name:
             # 如果是文件,直接提取文本
-            print(f"下载文件 {file_name} 成功,开始提取文本...")
+            logging.info(f"下载文件 {file_name} 成功,开始提取文本...")
             result = extract_text_from_file(file_name)            
             return result
 
@@ -118,7 +119,7 @@ def url_to_markdown(url: str) -> Optional[str]:
                 result = by_firecrawl(url)
                 # print(result)
                 if len(result) > 1000 and result != 'error':
-                    print(f'使用firecrawl抓取 {url} 成功 \n')
+                    logging.info(f'使用firecrawl抓取 {url} 成功 \n')
                     return result
                 elif result != 'error' and len(result) > len(best_result):
                     best_result = result  # 保存最佳结果
@@ -129,26 +130,26 @@ def url_to_markdown(url: str) -> Optional[str]:
                 # print(result)
                 if result and result != 'error':
                     if len(result) > 1000:
-                        print(f'使用crawl4ai抓取 {url} 成功 \n')
+                        logging.info(f'使用crawl4ai抓取 {url} 成功 \n')
                         return result
                     elif len(result) > len(best_result):
                         best_result = result  # 保存最佳结果
-                        print('保存crawl4ai结果,但继续尝试获取更好的结果')
+                        logging.info('保存crawl4ai结果,但继续尝试获取更好的结果')
                     else:
-                        print('crawl4ai结果过短,继续尝试')
+                        logging.info('crawl4ai结果过短,继续尝试')
                 
                 # 如果两种方法都没有产生足够长的结果,增加尝试次数
                 attempt_count += 1
                 if attempt_count < max_attempts:
-                    print(f"结果长度不足,第 {attempt_count+1} 次尝试抓取...")
+                    logging.info(f"结果长度不足,第 {attempt_count+1} 次尝试抓取...")
                 
         except Exception as e:
-            print(f"抓取失败: {str(e)}")
+            logging.error(f"抓取失败: {str(e)}")
             attempt_count += 1
     
     # 如果没有找到长度>1000的结果,但有其他结果,返回最佳结果
     if best_result:
-        print(f"未找到长度>1000的结果,返回最佳可用结果(长度:{len(best_result)})")
+        logging.info(f"未找到长度>1000的结果,返回最佳可用结果(长度:{len(best_result)})")
         return best_result
             
     return ''  # 如果所有尝试都失败,返回空字符串
@@ -156,7 +157,7 @@ def url_to_markdown(url: str) -> Optional[str]:
 if __name__ == "__main__":
     test_url = "https://github.com/xiaye13579/BBLL"
     result = url_to_markdown(test_url)
-    print(result)
+    logging.info(result)
     # if result:
     #     print(result)
     #     # 可选：保存到文件

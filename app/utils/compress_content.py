@@ -4,6 +4,7 @@ import random
 import requests
 import json
 import os
+import logging
 from pathlib import Path
 from openai import OpenAI
 
@@ -44,7 +45,7 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
     if not url:
         return ''
     try:
-        print(f"开始提取网页内容: {url}")
+        logging.info(f"开始提取网页内容: {url}")
         start_time = time.time()
         
         # 使用默认配置或传入的配置
@@ -112,11 +113,15 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
                                 break
                     
                     if not response_text:
-                        print(f"API响应未包含预期的文本内容: {response_json}")
+                        logging.warning(
+                            f"API响应未包含预期的文本内容: {response_json}"
+                        )
                         time.sleep(1)
                         
                 except Exception as e:
-                    print(f"第 {attempt + 1} 次调用失败: {str(e)},1秒后重试...")
+                    logging.error(
+                        f"第 {attempt + 1} 次调用失败: {str(e)},1秒后重试..."
+                    )
                     time.sleep(1)
                     
             if response_text is None:
@@ -130,15 +135,23 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
                 if response_json and "usageMetadata" in response_json:
                     usage = response_json["usageMetadata"]
                     if "totalTokenCount" in usage:
-                        print(f"gemini token消耗: {usage['totalTokenCount']}")
-                print(f"网页:{url}")
-                print(f"gemini处理耗时: {processing_time:.2f}秒")
-                print(f"gemini处理速度: {len(response_text) / processing_time:.2f}字符/秒")
-                print(f"原始内容长度{html_len}")
-                print(f"压缩后内容长度{len(response_text)}")
-                print(f"压缩率{len(response_text)/html_len:.2f} \n")
+                        logging.info(
+                            f"gemini token消耗: {usage['totalTokenCount']}"
+                        )
+                logging.info(f"网页:{url}")
+                logging.info(
+                    f"gemini处理耗时: {processing_time:.2f}秒"
+                )
+                logging.info(
+                    f"gemini处理速度: {len(response_text) / processing_time:.2f}字符/秒"
+                )
+                logging.info(f"原始内容长度{html_len}")
+                logging.info(f"压缩后内容长度{len(response_text)}")
+                logging.info(
+                    f"压缩率{len(response_text)/html_len:.2f} \n"
+                )
             except Exception as e:
-                print(f"处理速度计算失败: {str(e)}")
+                logging.error(f"处理速度计算失败: {str(e)}")
             if len(response_text) < 50 and "//--++" in response_text:
                 # if '+' in response_text:
                 #     return response_text[:40000:]
@@ -149,7 +162,7 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
             return html_content
 
     except Exception as e:
-        print(f"gemini处理失败: {str(e)}")
+        logging.error(f"gemini处理失败: {str(e)}")
         return ''
 
 
@@ -170,7 +183,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
         return ''
     
     try:
-        print(f"开始提取网页内容: {url}")
+        logging.info(f"开始提取网页内容: {url}")
         start_time = time.time()
         
         # 使用默认配置或传入的配置
@@ -207,7 +220,9 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
                         break
                         
                 except Exception as e:
-                    print(f"第 {attempt + 1} 次调用失败: {str(e)},1秒后重试...")
+                    logging.error(
+                        f"第 {attempt + 1} 次调用失败: {str(e)},1秒后重试..."
+                    )
                     time.sleep(1)
                     
             if response_text is None:
@@ -219,15 +234,15 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             try:
                 # 获取token消耗信息
                 if completion and completion.usage:
-                    print(f"{MODEL} token消耗: {completion.usage.total_tokens}")
-                print(f"网页:{url}")
-                print(f"{MODEL}处理耗时: {processing_time:.2f}秒")
-                print(f"{MODEL}处理速度: {len(response_text) / processing_time:.2f}字符/秒")
-                print(f"原始内容长度{html_len}")
-                print(f"压缩后内容长度{len(response_text)}")
-                print(f"压缩率{len(response_text)/html_len:.2f} \n")
+                    logging.info(f"{MODEL} token消耗: {completion.usage.total_tokens}")
+                logging.info(f"网页:{url}")
+                logging.info(f"{MODEL}处理耗时: {processing_time:.2f}秒")
+                logging.info(f"{MODEL}处理速度: {len(response_text) / processing_time:.2f}字符/秒")
+                logging.info(f"原始内容长度{html_len}")
+                logging.info(f"压缩后内容长度{len(response_text)}")
+                logging.info(f"压缩率{len(response_text)/html_len:.2f} \n")
             except Exception as e:
-                print(f"处理速度计算失败: {str(e)}")
+                logging.error(f"处理速度计算失败: {str(e)}")
                 
             if len(response_text) < 50 and "//--++" in response_text:
                 if '-' in response_text:
@@ -238,7 +253,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             return html_content
             
     except Exception as e:
-        print(f"{MODEL}处理失败: {str(e)}")
+        logging.error(f"{MODEL}处理失败: {str(e)}")
         return ''
 
 
@@ -277,5 +292,5 @@ if __name__ == "__main__":
 #     need_infomation = """
 # chatgpt plus的订阅价格"""
     result = compress_url_content(test_url, need_infomation, title="猫呀3399的贴吧")
-    print(result)
+    logging.info(result)
     

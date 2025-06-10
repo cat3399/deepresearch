@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import time
 import ast
+import logging
 from typing import Dict, Any, Callable
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
@@ -110,10 +111,11 @@ def chat_completion(messages: list, chat_model=BASE_CHAT_MODEL, client=CLIENT, u
     if not stream:
         # 打印响应信息
         processing_time = time.time() - start_time
-        print(f"token消耗: {response.usage.total_tokens}")
-        print(f"处理时间: {processing_time} s")
-        print(f"处理速度: {int(response.usage.completion_tokens/processing_time)} token/s")
-        print()
+        logging.info(f"token消耗: {response.usage.total_tokens}")
+        logging.info(f"处理时间: {processing_time} s")
+        logging.info(
+            f"处理速度: {int(response.usage.completion_tokens/processing_time)} token/s"
+        )
         return response.choices[0].message
     else:
         return response
@@ -151,7 +153,7 @@ def process_messages_stream(messages: list, search_mode: int = 1):
 
     yield sse_create_openai_data(reasoning_content="\n\n")
     if tool_calls:
-        print(tool_calls)
+        logging.debug(tool_calls)
         for tool_call in tool_calls:
             function_name = tool_call.function.name
             function_args = tool_call.function.arguments
@@ -195,9 +197,9 @@ def process_messages_stream(messages: list, search_mode: int = 1):
         yield sse_create_openai_data(content=content_result)
 
 def process_messages(messages: list, stream: bool = False, search_mode: int = 1):
-    print("非流模式")
+    logging.info("非流模式")
     assistant_reply = chat_completion(messages, use_tools=False)
-    print(assistant_reply)
+    logging.info(assistant_reply)
     # 未完善,非流暂时只支持简单对话,用于测试
     # tool_calls = getattr(assistant_reply, 'tool_calls', None)
     # if tool_calls:

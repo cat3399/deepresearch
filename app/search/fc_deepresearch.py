@@ -225,7 +225,7 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
             logging.debug("无法获取价值URL筛选的 token 使用情况。")
 
         llm_rsp_content_value = llm_rsp_value.choices[0].message.content
-        print(f"LLM返回的价值URL编号: {llm_rsp_content_value}")
+        logging.debug(f"LLM返回的价值URL编号: {llm_rsp_content_value}")
         url_num_list_json = response2json(llm_rsp_content_value)
         valuable_results_data = []
         if url_num_list_json and isinstance(url_num_list_json, list):
@@ -242,7 +242,7 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
         if not valuable_results_data:
             logging.warning("未能从LLM响应中提取到有价值的URL结果。")
             return SearchResults(search_request=search_request)
-        print(f"有价值的搜索结果: {valuable_results_data}")
+        logging.debug(f"有价值的搜索结果: {valuable_results_data}")
         if valuable_results_data:
             search_plan_result = deepscan(
                 search_response=valuable_results_data, search_request=search_request
@@ -286,7 +286,7 @@ def deepresearch_tool(messages: list[dict]):
     # 执行第一个搜索计划
     yield "🔄 **执行第一个搜索计划**\n"
     current_results = _execute_search_plan(executed_plan_item)
-    print(f"当前搜索结果: {current_results.to_str()}")
+    logging.debug(f"当前搜索结果: {current_results.to_str()}")
     yield from format_urls(current_results.get_urls())
     executed_search_plans.append(executed_plan_item)
     accumulated_search_results.merge(current_results)
@@ -356,5 +356,5 @@ if __name__ == "__main__":
     user_messages_example = [{"role": "user", "content": "介绍一下chatgpt o4mini"}]
     # print(f"正在对 \"{user_messages_example[0]['content']}\" 进行深度研究...")
     for item in deepresearch_tool(user_messages_example):
-        print(item, end="") # 避免重复换行
-    print("\n--- 研究结束 ---")
+        logging.info(item)
+    logging.info("--- 研究结束 ---")

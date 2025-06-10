@@ -4,6 +4,7 @@ from openai import OpenAI
 import time
 from pathlib import Path
 import sys
+import logging
 
 import requests
 
@@ -39,19 +40,21 @@ def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
             # print(completion)
             reason_content = completion.choices[0].message.reasoning_content
             messages.append({"role": "assistant", "content": response_data})
-            print(f"token消耗: {completion.usage.total_tokens}")
-            print(f"{model}处理耗时: {processing_time:.2f}秒")
-            print(f"{model}处理速度: {completion.usage.completion_tokens / processing_time:.2f}token/秒")
+            logging.info(f"token消耗: {completion.usage.total_tokens}")
+            logging.info(f"{model}处理耗时: {processing_time:.2f}秒")
+            logging.info(
+                f"{model}处理速度: {completion.usage.completion_tokens / processing_time:.2f}token/秒"
+            )
             return response_data,reason_content
 
         except Exception as e:
             retry_count += 1
             if retry_count >= MAX_RETRIES:
-                print(f"json_data: {completion.model_dump_json()}")
-                print(f"{model}请求失败: {str(e)}")
+                logging.error(f"json_data: {completion.model_dump_json()}")
+                logging.error(f"{model}请求失败: {str(e)}")
                 return "请求失败"
             else:
-                print(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
+                logging.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
 
 def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
     retry_count = 0
@@ -80,8 +83,8 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
                 except:
                     pass
             try:
-                print("总结模型花费token: ",chunk.usage.total_tokens)
-            except:
+                logging.info("总结模型花费token: %s", chunk.usage.total_tokens)
+            except Exception:
                 pass
             
             return 
@@ -89,11 +92,11 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
         except Exception as e:
             retry_count += 1
             if retry_count >= MAX_RETRIES:
-                print(f"{model}请求失败: {str(e)}")
+                logging.error(f"{model}请求失败: {str(e)}")
                 yield "请求失败"
                 return
             else:
-                print(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
+                logging.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
 
 def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
     retry_count = 0
@@ -134,28 +137,28 @@ def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
                 cost_totle_token = res_data['usageMetadata']['totalTokenCount']
                 cost_time = time.time() - start_time
                 speed = f"{model}处理速度 {cost_chat_token/cost_time:.2f} token/s"
-                print(f"{model}总共花费{cost_totle_token} token")
-                print(speed)
+                logging.info(f"{model}总共花费{cost_totle_token} token")
+                logging.info(speed)
             except Exception as e:
-                print(res_data['usageMetadata'])
-                print(f"获取token输出速度失败 {e}")
+                logging.debug(res_data['usageMetadata'])
+                logging.error(f"获取token输出速度失败 {e}")
             return res_data['candidates'][0]['content']['parts'][0]['text']
         except Exception as e:
             retry_count += 1
-            print(res_data)
-            print(res)
+            logging.debug(res_data)
+            logging.debug(res)
             if retry_count >= MAX_RETRIES:
-                print(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+                logging.error(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
                 return 'error'
             else:
-                print(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+                logging.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
 
 def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
     retry_count = 0
     try:
         api_key = random.choice(SUMMARY_API_KEYS)
-        print("SUMMARY_API_KEY",SUMMARY_API_KEYS)
-        print("使用的GEMINI KEY",api_key)
+        logging.debug("SUMMARY_API_KEY", SUMMARY_API_KEYS)
+        logging.debug("使用的GEMINI KEY", api_key)
         # print(messages)
         # Gemini API URL
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
@@ -187,12 +190,12 @@ def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
 
     except Exception as e:
         retry_count += 1
-        print(res)
+        logging.debug(res)
         if retry_count >= MAX_RETRIES:
-            print(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+            logging.error(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
             return sse_create_openai_data(content=f'Gemini出现问题{e}')
         else:
-            print(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+            logging.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
 
 def summary(messages:list[dict], model:str = SUMMARY_MODEL, stream:bool =False):
     """
@@ -238,4 +241,4 @@ if __name__ == "__main__":
     # time.sleep(5)
     for ss in s:
         if ss:
-            print(ss)
+            logging.info(ss)

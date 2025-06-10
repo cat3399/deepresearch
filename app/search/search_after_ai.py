@@ -220,24 +220,26 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
         top_results = sorted(results_score_all, key=lambda x:x['relevance_score'], reverse=True)
         top_results = top_results[:max_search_results:]
         for result in top_results:
-            print(f"标题: {result['title']}, 相关性分数: {result['relevance_score']}, URL: {result['url']}")
+            logging.info(
+                "标题: %s, 相关性分数: %s, URL: %s",
+                result['title'],
+                result['relevance_score'],
+                result['url'],
+            )
     except Exception as e:
         logging.error(f"相关性评估出错,使用原始分数排序: {str(e)}")
         logging.error(traceback.format_exc())
         return {}    
     
     logging.info(f"筛选得到 {len(top_results)} 个相关结果")
-    print(f"筛选得到 {len(top_results)} 个相关结果")
     
     if not top_results:
         logging.warning("没有找到相关结果")
-        print("没有找到相关结果")
         return {}
     if deep:
         deepscan_results = deepscan(top_results, search_request)
         search_time = time.time() - start_time
         logging.info(f"搜索耗时: {search_time:.2f} 秒")
-        print(f"搜索耗时: {search_time:.2f} 秒")
         
         return deepscan_results
     else:
@@ -315,5 +317,5 @@ if __name__ == "__main__":
     search_purpose = "了解2025年LPL春季赛季后赛的具体赛程安排和比赛时间"
     search_request = [SearchRequest(query['keys'],query['language'],[0, 0, 0],search_purpose) for query in querys]
     result = search_ai(search_request,deep=False)
-    print(result.to_str())
-    print(result.get_urls())
+    logging.info(result.to_str())
+    logging.info(result.get_urls())

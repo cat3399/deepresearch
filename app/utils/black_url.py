@@ -34,5 +34,4 @@ def load_blacklist(filepath):
 # --- 在模块加载时加载一次黑名单 ---
 # 这比在每次调用 search_api_worker 时加载更高效
 URL_BLACKLIST = load_blacklist(BLACKLIST_FILE)
-
-print(URL_BLACKLIST)
+logging.debug(URL_BLACKLIST)

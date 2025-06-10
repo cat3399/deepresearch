@@ -75,4 +75,4 @@ if __name__ == "__main__":
     test_query = "gpt o4mini vs gemini2.5 flash differences"
     results = search_api_worker(test_query, "en")
     for result in results:
-        print(result['url'])
+        logging.info(result['url'])

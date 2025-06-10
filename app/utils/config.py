@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 env_path = ROOT_DIR.joinpath(".env")
 if os.path.exists(env_path):
     load_dotenv(env_path)
-    print("环境变量文件已加载")
+    logging.info("环境变量文件已加载")
 
 # 设置日志记录
 logging.basicConfig(
@@ -37,11 +37,11 @@ FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
 CRAWL4AI_API_URL = os.getenv("CRAWL4AI_API_URL")
 FIRECRAWL_API_URL = FIRECRAWL_API_URL.rstrip('/')
 if FIRECRAWL_API_URL == "https://api.firecrawl.dev" and not FIRECRAWL_API_KEY:
-    print("使用Firecrawl需要填写key 从https://www.firecrawl.dev/获取")
+    logging.warning("使用Firecrawl需要填写key 从https://www.firecrawl.dev/获取")
     FIRECRAWL_API_URL = ''
 
 if not FIRECRAWL_API_URL and not CRAWL4AI_API_URL:
-    print("至少需要填写一种获取网页内容的方式")
+    logging.error("至少需要填写一种获取网页内容的方式")
     raise ValueError("至少需要填写一种获取网页内容的方式")
 CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM"))
 MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS"))
@@ -118,18 +118,18 @@ def validate_config():
     
     # 输出校验结果
     if errors:
-        print("\n====== 配置错误 ======")
+        logging.error("\n====== 配置错误 ======")
         for error in errors:
-            print(f"❌ {error}")
-        print("\n程序将无法正常运行,请修复上述错误。")
+            logging.error(f"❌ {error}")
+        logging.error("\n程序将无法正常运行,请修复上述错误。")
         return False
     
     if warnings:
-        print("\n====== 配置警告 ======")
+        logging.warning("\n====== 配置警告 ======")
         for warning in warnings:
-            print(f"⚠️ {warning}")
+            logging.warning(f"⚠️ {warning}")
     
-    print("\n✅ 配置校验通过")
+    logging.info("\n✅ 配置校验通过")
     
     return True
 

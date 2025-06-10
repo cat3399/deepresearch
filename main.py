@@ -1,5 +1,6 @@
 from flask import Flask
 from dotenv import load_dotenv
+import logging
 
 # 加载环境变量
 load_dotenv()
@@ -15,7 +16,7 @@ app = Flask(__name__)
 register_routes(app)
 
 # 打印初始信息
-print(f"基础对话使用的模型: {BASE_CHAT_MODEL}")
+logging.info(f"基础对话使用的模型: {BASE_CHAT_MODEL}")
 
 if __name__ == "__main__":
     # 运行 Flask 服务
