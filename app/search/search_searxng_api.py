@@ -1,5 +1,6 @@
 import requests
 import logging
+from config import logging_config  # noqa: F401
 import re  
 import traceback
 import time
@@ -13,7 +14,7 @@ if str(ROOT_DIR) not in sys.path:
 from app.utils.config import SEARXNG_URL
 # 黑名单文件路径 (假设在项目根目录)
 BLACKLIST_FILE = ROOT_DIR / 'blacklist.txt'
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# 日志配置在 config/logging_config.py 中统一管理
 
 MAX_RETRIES = 3  # 最大重试次数
 if not SEARXNG_URL:

@@ -3,6 +3,7 @@ import time
 from urllib.parse import urlparse
 import traceback
 import logging
+from config import logging_config  # noqa: F401
 import sys
 from typing import List, Dict, Tuple
 from pathlib import Path
@@ -26,7 +27,7 @@ from app.utils.config import \
 from app.utils.prompt import RELEVANCE_EVALUATION_PROMPT
     
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# 日志配置在 config/logging_config.py 中统一管理
 
 RELEVANCE_THRESHOLD = 0  # 相关性阈值,低于此分数的结果将被过滤
 MAX_RETRIES = 3  # 最大重试次数

@@ -1,5 +1,6 @@
 import json
 import logging
+from config import logging_config  # noqa: F401
 import sys
 import time
 import traceback
@@ -30,9 +31,7 @@ from app.utils.tools import (format_search_plan, format_urls, get_time,
 
 
 client = OpenAI(api_key=SEARCH_KEYWORD_API_KEY, base_url=SEARCH_KEYWORD_API_URL)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+# 日志配置在 config/logging_config.py 中统一管理
 
 
 def _search_valuable_results(

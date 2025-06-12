@@ -1,6 +1,7 @@
 import os
 from string import Template
 import logging
+from config import logging_config  # noqa: F401
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -11,15 +12,7 @@ if os.path.exists(env_path):
     load_dotenv(env_path)
     logging.info("环境变量文件已加载")
 
-# 设置日志记录
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(ROOT_DIR.joinpath("app.log"), mode='a', encoding='utf-8')
-    ]
-)
+# 日志配置在 config/logging_config.py 中统一管理
 
 # SearXNG配置（需要支持JSON格式）
 SEARXNG_URL = os.getenv("SEARXNG_URL")
