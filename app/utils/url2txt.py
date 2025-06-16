@@ -98,14 +98,17 @@ def url_to_markdown(url: str) -> Optional[str]:
     max_attempts = 2
     best_result = ''  # 存储最佳结果
     url = url.strip(' ')
-    
     if url.endswith(tuple(AVAILABLE_EXTENSIONS)):
+        logger.info(f"下载文件 { url.rsplit('//')[-1] } 中...")
         file_name = download_file(url)
         if file_name:
             # 如果是文件,直接提取文本
-            logger.info(f"下载文件 {file_name} 成功,开始提取文本...")
+            logger.info(f"下载文件 { url.rsplit('//')[-1] } 成功")
             result = extract_text_from_file(file_name)            
             return result
+        else:
+            logger.warning(f"下载文件 { url.rsplit('//')[-1] } 失败!")
+            return "提取内容失败!"
 
     while attempt_count < max_attempts:
         try:
@@ -150,7 +153,7 @@ def url_to_markdown(url: str) -> Optional[str]:
     return ''  # 如果所有尝试都失败,返回空字符串
 # 使用示例
 if __name__ == "__main__":
-    test_url = "https://github.com/xiaye13579/BBLL"
+    test_url = "https://xxgk.nepu.edu.cn/2025niandongbeishiyoudaxuebumenyusuan.pdf"
     result = url_to_markdown(test_url)
     logger.info(result)
     # if result:
