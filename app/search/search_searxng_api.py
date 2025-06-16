@@ -10,7 +10,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from config.logging_config import logger
-from config.base_config import SEARXNG_URL,TAVILY_KEY
+from config.base_config import SEARXNG_URL,TAVILY_KEY,TAVILY_MAX_NUM
 
 # 黑名单文件路径 (假设在项目根目录)
 BLACKLIST_FILE = ROOT_DIR / 'blacklist.txt'
@@ -79,7 +79,7 @@ def by_tavily(query, language, time_page = [0,0,0]):
         "topic": "general",
         "search_depth": "basic",
         "chunks_per_source": 3,
-        "max_results": 15,
+        "max_results": TAVILY_MAX_NUM,
         "time_range": time_range,
         "include_raw_content": False,
         "country": None
