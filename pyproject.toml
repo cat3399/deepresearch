@@ -1,13 +1,18 @@
 [project]
-name = "ai-search"
+name = "deepresearch"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "crawl4ai>=0.6.3",
+    "beautifulsoup4>=4.13.4",
     "dotenv>=0.9.9",
-    "flask-cors>=6.0.0",
-    "openai>=1.84.0",
-    "requests>=2.32.3",
+    "flask>=3.1.1",
+    "openai>=1.86.0",
+    "openpyxl>=3.1.5",
+    "pydocx>=0.9.10",
+    "pymupdf>=1.26.1",
+    "python-docx>=1.1.2",
+    "requests>=2.32.4",
+    "xlrd>=2.0.2",
 ]

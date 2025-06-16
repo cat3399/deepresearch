@@ -1,0 +1,10 @@
+beautifulsoup4>=4.13.4
+python-dotenv>=0.9.9
+Flask>=3.1.1
+openai>=1.86.0
+openpyxl>=3.1.5
+pydocx>=0.9.10
+PyMuPDF>=1.26.1
+python-docx>=1.1.2
+requests>=2.32.4
+xlrd>=2.0.2
