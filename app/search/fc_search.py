@@ -39,7 +39,7 @@ def search_core(messages: str, deep: bool = True):
 
 def search_tool(messages: str):
     messages = [{'role': 'user', 'content': SEARCH_PROMPT.substitute(messages=messages, current_time=get_time())}]
-    logger.info("调用普通搜索工具")
+    logger.info("调用搜索工具")
     client = OpenAI(
         api_key=SEARCH_KEYWORD_API_KEY,
         base_url=SEARCH_KEYWORD_API_URL

@@ -336,13 +336,13 @@ def deepresearch_tool(messages: list[dict]):
         yield "🚫 **研究过程出现意外,强行终止**"
     
     # 将结果写入文件
-    try:
-        with open("temp_research.txt", "w", encoding="utf-8") as fp:
-            fp.write(accumulated_search_results.to_str())
-        yield f"💾 结果已保存到 temp_research.txt\n"
-    except IOError as e:
-        logger.error(f"写入 temp_research.txt 文件失败: {e}")
-        yield f"⚠️ 无法写入结果文件: {e}\n"
+    # try:
+    #     with open("temp_research.txt", "w", encoding="utf-8") as fp:
+    #         fp.write(accumulated_search_results.to_str())
+    #     # yield f"💾 结果已保存到 temp_research.txt\n"
+    # except IOError as e:
+    #     logger.error(f"写入 temp_research.txt 文件失败: {e}")
+    #     yield f"⚠️ 无法写入结果文件: {e}\n"
 
     yield f"results{accumulated_search_results.to_str()}"
 

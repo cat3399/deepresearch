@@ -17,11 +17,6 @@ from config.base_config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_
 from config.logging_config import logger
 from app.utils.tools import download_file,extract_text_from_file
 
-logger.info(f"使用的FIRECRAWL_API_URL: {FIRECRAWL_API_URL}")
-logger.info(f"使用的FIRECRAWL_API_KEY: {FIRECRAWL_API_KEY}")
-logger.info(f"使用的CRAWL4AI_API_URL: {CRAWL4AI_API_URL}")
-logger.info("")
-
 def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> Optional[str]:
     try:
         scrape_url = f"{server_url}/v1/scrape"

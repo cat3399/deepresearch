@@ -43,12 +43,10 @@ def by_searxng(query, language, time_page = [0,0,0]):
         except requests.exceptions.RequestException as e: # 更具体的网络异常捕获
             retry_count += 1
             wait_time = 1 # 简单的固定等待时间，可以考虑指数退避
-            log_level = logger.warning if retry_count < MAX_RETRIES else logger.error
-            log_level(f"搜索关键词 '{query}' 时发生网络错误: {str(e)}. "
+            logger.debug(f"搜索关键词 '{query}' 时发生网络错误: {str(e)}. "
                       f"尝试次数 {retry_count}/{MAX_RETRIES}. "
                       f"{f'等待 {wait_time} 秒后重试...' if retry_count < MAX_RETRIES else '已达最大重试次数.'}")
-            if logger.getLogger().isEnabledFor(logger.DEBUG): # 仅在 DEBUG 级别记录完整堆栈
-                 logger.debug(traceback.format_exc())
+            logger.debug(traceback.format_exc())
             if retry_count < MAX_RETRIES:
                 time.sleep(wait_time)
         except Exception as e: # 捕获其他可能的异常 (如 JSON 解析错误)
@@ -102,12 +100,10 @@ def by_tavily(query, language, time_page = [0,0,0]):
         except requests.exceptions.RequestException as e: # 更具体的网络异常捕获
             retry_count += 1
             wait_time = 1 # 简单的固定等待时间，可以考虑指数退避
-            log_level = logger.warning if retry_count < MAX_RETRIES else logger.error
-            log_level(f"搜索关键词 '{query}' 时发生网络错误: {str(e)}. "
+            logger.debug(f"搜索关键词 '{query}' 时发生网络错误: {str(e)}. "
                       f"尝试次数 {retry_count}/{MAX_RETRIES}. "
                       f"{f'等待 {wait_time} 秒后重试...' if retry_count < MAX_RETRIES else '已达最大重试次数.'}")
-            if logger.getLogger().isEnabledFor(logger.DEBUG): # 仅在 DEBUG 级别记录完整堆栈
-                 logger.debug(traceback.format_exc())
+            logger.debug(traceback.format_exc())
             if retry_count < MAX_RETRIES:
                 time.sleep(wait_time)
         except Exception as e: # 捕获其他可能的异常 (如 JSON 解析错误)
