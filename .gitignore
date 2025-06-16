@@ -1,17 +1,39 @@
+# Python
 __pycache__/
-*.py[oc]
+*.py[cod]
+*.so
+
+# Build
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
+*.egg
 
-.venv
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Tests
 **/tests/
+
+# Files
 *.txt
 *.log
 *.tmp
 *.temp
-.env
 *.csv
+
+# Environment
+.env
+
+# IDE
 .vscode/
+
+# Project specific
 tmp_files/
+
+# Keep important files
+!requirements.txt
+!blacklist.txt
