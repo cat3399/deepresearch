@@ -139,7 +139,6 @@ def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
                 cost_time = time.time() - start_time
                 speed = f"{model}处理速度 {cost_chat_token/cost_time:.2f} token/s"
                 logger.info(f"{model}总共花费{cost_totle_token} token")
-                logger.info(speed)
             except Exception as e:
                 logger.debug(res_data['usageMetadata'])
                 logger.error(f"获取token输出速度失败 {e}")
@@ -158,8 +157,7 @@ def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
     retry_count = 0
     try:
         api_key = random.choice(SUMMARY_API_KEYS)
-        logger.debug("SUMMARY_API_KEY", SUMMARY_API_KEYS)
-        logger.debug("使用的GEMINI KEY", api_key)
+
         # print(messages)
         # Gemini API URL
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"

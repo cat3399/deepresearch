@@ -152,7 +152,6 @@ def process_messages_stream(messages: list, search_mode: int = 1):
 
     yield sse_create_openai_data(reasoning_content="\n\n")
     if tool_calls:
-        logger.debug(tool_calls)
         for tool_call in tool_calls:
             function_name = tool_call.function.name
             function_args = tool_call.function.arguments
@@ -198,7 +197,6 @@ def process_messages_stream(messages: list, search_mode: int = 1):
 def process_messages(messages: list, stream: bool = False, search_mode: int = 1):
     logger.info("非流模式")
     assistant_reply = chat_completion(messages, use_tools=False)
-    logger.info(assistant_reply)
     # 未完善,非流暂时只支持简单对话,用于测试
     # tool_calls = getattr(assistant_reply, 'tool_calls', None)
     # if tool_calls:
