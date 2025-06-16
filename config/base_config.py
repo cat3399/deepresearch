@@ -1,22 +1,29 @@
 import os
 from string import Template
-import logging
-from config import logging_config  # noqa: F401
+import sys
 from dotenv import load_dotenv
 from pathlib import Path
 
 # 将项目根目录添加到sys.path
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent
+    
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+from config.logging_config import logger
+
 env_path = ROOT_DIR.joinpath(".env")
 if os.path.exists(env_path):
     load_dotenv(env_path)
-    logging.info("环境变量文件已加载")
-
-# 日志配置在 config/logging_config.py 中统一管理
-
+    logger.info("环境变量文件已加载")
+# 搜索引擎配置 SearXNG可以使用https://seek.nuer.cc/ (不保证一定可用)
 # SearXNG配置（需要支持JSON格式）
 SEARXNG_URL = os.getenv("SEARXNG_URL")
-SEARCH_API_LIMIT = int(os.getenv("SEARCH_API_LIMIT"))
+SEARCH_API_LIMIT = os.getenv("SEARCH_API_LIMIT")
+if SEARCH_API_LIMIT:
+    SEARCH_API_LIMIT = int(SEARCH_API_LIMIT)
+
+# tavily 配置
+TAVILY_KEY = os.getenv("TAVILY_KEY","")
 #############################################
 # 网页爬虫配置
 #############################################
@@ -30,11 +37,11 @@ FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
 CRAWL4AI_API_URL = os.getenv("CRAWL4AI_API_URL")
 FIRECRAWL_API_URL = FIRECRAWL_API_URL.rstrip('/')
 if FIRECRAWL_API_URL == "https://api.firecrawl.dev" and not FIRECRAWL_API_KEY:
-    logging.warning("使用Firecrawl需要填写key 从https://www.firecrawl.dev/获取")
+    logger.warning("使用Firecrawl需要填写key 从https://www.firecrawl.dev/获取")
     FIRECRAWL_API_URL = ''
 
 if not FIRECRAWL_API_URL and not CRAWL4AI_API_URL:
-    logging.error("至少需要填写一种获取网页内容的方式")
+    logger.error("至少需要填写一种获取网页内容的方式")
     raise ValueError("至少需要填写一种获取网页内容的方式")
 CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM"))
 MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS"))
@@ -83,7 +90,11 @@ def validate_config():
     
     # 检查基础搜索引擎
     if not SEARXNG_URL:
-        errors.append("缺少SearXNG URL配置")
+        warnings.append("缺少SearXNG URL配置")
+    if not TAVILY_KEY:
+        warnings.append("缺少Tavily KEY配置")
+    if not SEARXNG_URL and not TAVILY_KEY:
+        errors.append("缺少任意一个搜索引擎的配置")
     
     # 检查基础对话模型配置
     if not BASE_CHAT_API_KEY:
@@ -111,18 +122,18 @@ def validate_config():
     
     # 输出校验结果
     if errors:
-        logging.error("\n====== 配置错误 ======")
+        logger.error("\n====== 配置错误 ======")
         for error in errors:
-            logging.error(f"❌ {error}")
-        logging.error("\n程序将无法正常运行,请修复上述错误。")
+            logger.error(f"❌ {error}")
+        logger.error("\n程序将无法正常运行,请修复上述错误。")
         return False
     
     if warnings:
-        logging.warning("\n====== 配置警告 ======")
+        logger.warning("====== 配置警告 ======")
         for warning in warnings:
-            logging.warning(f"⚠️ {warning}")
+            logger.warning(f"⚠️ {warning}")
     
-    logging.info("\n✅ 配置校验通过")
+    logger.info("✅ 配置校验通过")
     
     return True
 

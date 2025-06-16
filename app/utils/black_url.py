@@ -1,5 +1,4 @@
 # --- 黑名单加载功能 ---
-import logging
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
@@ -10,6 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
+from config.logging_config import logger
 # 黑名单文件路径 (假设在项目根目录)
 BLACKLIST_FILE = ROOT_DIR / 'blacklist.txt'
 
@@ -17,7 +17,7 @@ def load_blacklist(filepath):
     """从文件加载 URL 黑名单到集合中以提高效率"""
     blacklist = set()
     if not filepath.exists():
-        logging.warning(f"黑名单文件 '{filepath}' 不存在。将不进行 URL 黑名单过滤。")
+        logger.warning(f"黑名单文件 '{filepath}' 不存在。将不进行 URL 黑名单过滤。")
         return blacklist
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -25,13 +25,13 @@ def load_blacklist(filepath):
                 url = line.strip()
                 if url: # 忽略空行
                     blacklist.add(url)
-        logging.info(f"成功从 '{filepath}' 加载 {len(blacklist)} 个 URL 到黑名单。")
+        logger.info(f"成功从 '{filepath}' 加载 {len(blacklist)} 个 URL 到黑名单。")
     except IOError as e:
-        logging.error(f"读取黑名单文件 '{filepath}' 时出错: {e}")
+        logger.error(f"读取黑名单文件 '{filepath}' 时出错: {e}")
         # 出错时返回空集合，避免影响正常流程，但会记录错误
     return list(blacklist)
 
 # --- 在模块加载时加载一次黑名单 ---
 # 这比在每次调用 search_api_worker 时加载更高效
 URL_BLACKLIST = load_blacklist(BLACKLIST_FILE)
-logging.debug(URL_BLACKLIST)
+logger.debug(URL_BLACKLIST)

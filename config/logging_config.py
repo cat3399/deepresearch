@@ -12,3 +12,4 @@ logging.basicConfig(
         logging.FileHandler(LOG_FILE, mode='a', encoding='utf-8')
     ]
 )
+logger = logging.getLogger(__name__)

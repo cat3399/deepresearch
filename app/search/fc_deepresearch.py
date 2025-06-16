@@ -1,6 +1,4 @@
 import json
-import logging
-from config import logging_config  # noqa: F401
 import sys
 import time
 import traceback
@@ -19,16 +17,15 @@ from app.search.models import SearchRequest, SearchResult, SearchResults
 from app.search.search_after_ai import deepscan, is_duplicate
 from app.search.search_searxng_api import search_api_worker
 from app.utils.black_url import URL_BLACKLIST
-# from app.utils.compress_content import compress_url_content # 似乎未使用，可以考虑移除
-from app.utils.config import (SEARCH_API_LIMIT,
+from config.base_config import (SEARCH_API_LIMIT,
                               SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL,SEARCH_KEYWORD_MODEL,
                               EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL, EVALUATE_THREAD_NUM
                               )
+from config.logging_config import logger
 from app.utils.prompt import (DEEPRESEARCH_FIRST_PROMPT,
                               DEEPRESEARCH_NEXT_PROMPT, GET_VALUE_URL_PROMPT)
 from app.utils.tools import (format_search_plan, format_urls, get_time,
                              json2SearchRequests, response2json)
-
 
 client = OpenAI(api_key=SEARCH_KEYWORD_API_KEY, base_url=SEARCH_KEYWORD_API_URL)
 # 日志配置在 config/logging_config.py 中统一管理
@@ -43,12 +40,12 @@ def _search_valuable_results(
     start_time = time.time()
     new_results = []
     if not search_request:
-        logging.warning("搜索请求列表为空。")
+        logger.warning("搜索请求列表为空。")
         return SearchResults()
 
     search_purpose = search_request.search_purpose
     time_page = search_request.time_page
-    logging.info(f"开始搜索 - 目的: {search_purpose}")
+    logger.info(f"开始搜索 - 目的: {search_purpose}")
 
     with ThreadPoolExecutor(
         max_workers=SEARCH_API_LIMIT
@@ -57,7 +54,7 @@ def _search_valuable_results(
         for data in search_request.query_keys:
             query = data.key
             language = data.language
-            logging.info(
+            logger.info(
                 f"搜索关键词: {query}, 语言: {language}, 时间范围: {time_page}"
             )
             if query and language:
@@ -72,8 +69,8 @@ def _search_valuable_results(
                     if not is_duplicate(result, new_results):
                         new_results.append(result)
             except Exception as e:
-                logging.error(f"处理搜索结果时出错: {str(e)}")
-                logging.error(traceback.format_exc())
+                logger.error(f"处理搜索结果时出错: {str(e)}")
+                logger.error(traceback.format_exc())
 
     if URL_BLACKLIST:
         unique_results = [
@@ -93,9 +90,9 @@ def _search_valuable_results(
             for result in unique_results
             if result.get("url", "").strip() not in stripped_excluded_set
         ]
-    logging.info(f"排除了 {len(new_results)-len(unique_results)} 个结果")
+    logger.info(f"排除了 {len(new_results)-len(unique_results)} 个结果")
     if not unique_results:
-        logging.warning("没有找到任何搜索结果")
+        logger.warning("没有找到任何搜索结果")
         # 返回一个空的 SearchResults 对象而不是字典
         return SearchResults(search_request=search_request, results=[])
 
@@ -157,16 +154,16 @@ def generate_search_plan(messages: list[dict], web_reference: str = "", previous
         try:
             completion_tokens = llm_rsp.usage.completion_tokens
             total_tokens = llm_rsp.usage.total_tokens
-            logging.debug(f"搜索计划生成输出tokens: {completion_tokens}")
-            logging.debug(f"搜索计划生成总共花费tokens: {total_tokens}")
+            logger.debug(f"搜索计划生成输出tokens: {completion_tokens}")
+            logger.debug(f"搜索计划生成总共花费tokens: {total_tokens}")
         except AttributeError:
-            logging.debug("无法获取搜索计划生成的 token 使用情况。")
+            logger.debug("无法获取搜索计划生成的 token 使用情况。")
         
         parsed_rsp = response2json(llm_rsp_content)
         steps = parsed_rsp.get("steps", [])
         return steps
     except Exception as e:
-        logging.error(f"生成搜索计划时出错: {str(e)}")
+        logger.error(f"生成搜索计划时出错: {str(e)}")
         return []
 
 
@@ -183,17 +180,17 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
     """
     if excluded_urls is None:
         excluded_urls = [""]
-    logging.info(f"执行搜索计划: {search_plan_step}")
+    logger.info(f"执行搜索计划: {search_plan_step}")
     search_request = json2SearchRequests(search_plan_step)
     if not search_request:
-        logging.warning("未能从计划中解析出有效的搜索请求。")
+        logger.warning("未能从计划中解析出有效的搜索请求。")
         return SearchResults()
 
     search_results = _search_valuable_results(
         search_request=search_request, excluded_urls=excluded_urls
     )
     if not search_results.results:
-        logging.warning("未能从搜索中获取到结果。")
+        logger.warning("未能从搜索中获取到结果。")
         return SearchResults(search_request=search_request, results=[])
 
     # 筛选有价值的URL
@@ -218,13 +215,13 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
         try:
             completion_tokens_val = llm_rsp_value.usage.completion_tokens
             total_tokens_val = llm_rsp_value.usage.total_tokens
-            logging.debug(f"价值URL筛选输出tokens: {completion_tokens_val}")
-            logging.debug(f"价值URL筛选总共花费tokens: {total_tokens_val}")
+            logger.debug(f"价值URL筛选输出tokens: {completion_tokens_val}")
+            logger.debug(f"价值URL筛选总共花费tokens: {total_tokens_val}")
         except AttributeError:
-            logging.debug("无法获取价值URL筛选的 token 使用情况。")
+            logger.debug("无法获取价值URL筛选的 token 使用情况。")
 
         llm_rsp_content_value = llm_rsp_value.choices[0].message.content
-        logging.debug(f"LLM返回的价值URL编号: {llm_rsp_content_value}")
+        logger.debug(f"LLM返回的价值URL编号: {llm_rsp_content_value}")
         url_num_list_json = response2json(llm_rsp_content_value)
         valuable_results_data = []
         if url_num_list_json and isinstance(url_num_list_json, list):
@@ -234,24 +231,24 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
                 if key in search_results_dict:
                     valuable_results_data.append(search_results_dict[key])
                 else:
-                    logging.warning(f"未能从搜索结果字典中找到键: {key}")
+                    logger.warning(f"未能从搜索结果字典中找到键: {key}")
         else:
-            logging.warning(f"LLM返回的价值URL编号不是列表格式: {url_num_list_json}")
+            logger.warning(f"LLM返回的价值URL编号不是列表格式: {url_num_list_json}")
 
         if not valuable_results_data:
-            logging.warning("未能从LLM响应中提取到有价值的URL结果。")
+            logger.warning("未能从LLM响应中提取到有价值的URL结果。")
             return SearchResults(search_request=search_request)
-        logging.debug(f"有价值的搜索结果: {valuable_results_data}")
+        logger.debug(f"有价值的搜索结果: {valuable_results_data}")
         if valuable_results_data:
             search_plan_result = deepscan(
                 search_response=valuable_results_data, search_request=search_request
             )
             return search_plan_result
         else:
-            logging.warning("没有找到有价值的搜索结果。")
+            logger.warning("没有找到有价值的搜索结果。")
             return SearchResults(search_request=search_request)
     except Exception as e:
-        logging.error(f"执行搜索计划时出错: {str(e)}")
+        logger.error(f"执行搜索计划时出错: {str(e)}")
         return SearchResults(search_request=search_request)
 
 def deepresearch_tool(messages: list[dict]):
@@ -285,7 +282,7 @@ def deepresearch_tool(messages: list[dict]):
     # 执行第一个搜索计划
     yield "🔄 **执行第一个搜索计划**\n"
     current_results = _execute_search_plan(executed_plan_item)
-    logging.debug(f"当前搜索结果: {current_results.to_str()}")
+    logger.debug(f"当前搜索结果: {current_results.to_str()}")
     yield from format_urls(current_results.get_urls())
     executed_search_plans.append(executed_plan_item)
     accumulated_search_results.merge(current_results)
@@ -344,7 +341,7 @@ def deepresearch_tool(messages: list[dict]):
             fp.write(accumulated_search_results.to_str())
         yield f"💾 结果已保存到 temp_research.txt\n"
     except IOError as e:
-        logging.error(f"写入 temp_research.txt 文件失败: {e}")
+        logger.error(f"写入 temp_research.txt 文件失败: {e}")
         yield f"⚠️ 无法写入结果文件: {e}\n"
 
     yield f"results{accumulated_search_results.to_str()}"
@@ -355,5 +352,5 @@ if __name__ == "__main__":
     user_messages_example = [{"role": "user", "content": "介绍一下chatgpt o4mini"}]
     # print(f"正在对 \"{user_messages_example[0]['content']}\" 进行深度研究...")
     for item in deepresearch_tool(user_messages_example):
-        logging.info(item)
-    logging.info("--- 研究结束 ---")
+        logger.info(item)
+    logger.info("--- 研究结束 ---")

@@ -8,7 +8,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from app.utils.config import SUMMARY_MODEL
+from config.base_config import SUMMARY_MODEL
 from app.utils.prompt import SYS_PROMPT
 from app.utils.tools import get_time
 from app.chat.functions import process_messages,process_messages_stream

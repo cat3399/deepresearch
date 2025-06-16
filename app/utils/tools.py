@@ -8,7 +8,6 @@ import re
 import sys
 import time
 import traceback
-import logging
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -27,7 +26,8 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.search.models import SearchRequest,QueryKeys
-from app.utils.config import AVAILABLE_EXTENSIONS
+from config.base_config import AVAILABLE_EXTENSIONS
+from config.logging_config import logger
 
 def response2json(text: str, mode: str = "json_str") -> Union[Dict, List, None]:
     """
@@ -71,10 +71,10 @@ def response2json(text: str, mode: str = "json_str") -> Union[Dict, List, None]:
             parsed_json_content = json.loads(string_to_parse)
             return parsed_json_content
         except json.JSONDecodeError as e:
-            logging.error(f"JSON 解析失败: {e}")
+            logger.error(f"JSON 解析失败: {e}")
             return None
     else:
-        logging.warning("未找到匹配的 JSON 格式内容")
+        logger.warning("未找到匹配的 JSON 格式内容")
         return None
 
 
@@ -197,7 +197,7 @@ def sse_gemini2openai_data(gemini_sse_data: str) -> str:
         except Exception:
             pass
     else:
-        logging.debug(gemini_sse_data)
+        logger.debug(gemini_sse_data)
 
 
 def text2fc(llm_str: str) -> list:
@@ -222,9 +222,9 @@ def text2fc(llm_str: str) -> list:
             fc_message = fc(fc_name, fc_arguments)
             return [fc_message]
         except Exception as e:
-            logging.error("function call提取出问题")
-            logging.error(e)
-            logging.error(fc_text)
+            logger.error("function call提取出问题")
+            logger.error(e)
+            logger.error(fc_text)
 
 
 def json2SearchRequests(data: dict) -> SearchRequest:
@@ -314,7 +314,7 @@ def download_file(url):
         if head_response.status_code == 200:
             content_length = head_response.headers.get('Content-Length')
             if content_length and int(content_length) > MAX_FILE_SIZE:
-                logging.warning(
+                logger.warning(
                     f"文件过大: {int(content_length) / (1024*1024):.1f}MB > 10MB"
                 )
                 return ''
@@ -329,7 +329,7 @@ def download_file(url):
                 if chunk:
                     downloaded_size += len(chunk)
                     if downloaded_size > MAX_FILE_SIZE:
-                        logging.warning(
+                        logger.warning(
                             f"下载过程中发现文件过大: {downloaded_size / (1024*1024):.1f}MB > 10MB"
                         )
                         # 删除部分下载的文件
@@ -404,7 +404,7 @@ def extract_text_from_file(file_path):
             return f"不支持的文件类型: {extension}"
 
     except Exception as e:
-        logging.error(f"处理文件 {file_path.name} 时出错: {e}")
+        logger.error(f"处理文件 {file_path.name} 时出错: {e}")
         return f"处理文件 {file_path} 时出错"
 # ...existing code...
 
@@ -436,6 +436,6 @@ if __name__ == "__main__":
         ]
     }
     '''
-    logging.info(json2SearchRequests(json.loads(t)))
+    logger.info(json2SearchRequests(json.loads(t)))
     # usage = {"completion_tokens": 16, "prompt_tokens": 4, "total_tokens": 20}
     # print(sse_create_openai_usage_data(usage))

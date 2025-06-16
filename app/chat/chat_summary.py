@@ -4,7 +4,6 @@ from openai import OpenAI
 import time
 from pathlib import Path
 import sys
-import logging
 
 import requests
 
@@ -14,7 +13,9 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.utils.tools import sse_create_openai_data, sse_gemini2openai_data
-from app.utils.config import SUMMARY_API_KEY,SUMMARY_API_URL,SUMMARY_MODEL,SUMMARY_API_TYPE
+from config.base_config import SUMMARY_API_KEY,SUMMARY_API_URL,SUMMARY_MODEL,SUMMARY_API_TYPE
+from config.logging_config import logger
+
 
 if SUMMARY_API_TYPE != "GEMINI":
     client = OpenAI(
@@ -40,9 +41,9 @@ def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
             # print(completion)
             reason_content = completion.choices[0].message.reasoning_content
             messages.append({"role": "assistant", "content": response_data})
-            logging.info(f"token消耗: {completion.usage.total_tokens}")
-            logging.info(f"{model}处理耗时: {processing_time:.2f}秒")
-            logging.info(
+            logger.info(f"token消耗: {completion.usage.total_tokens}")
+            logger.info(f"{model}处理耗时: {processing_time:.2f}秒")
+            logger.info(
                 f"{model}处理速度: {completion.usage.completion_tokens / processing_time:.2f}token/秒"
             )
             return response_data,reason_content
@@ -50,11 +51,11 @@ def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
         except Exception as e:
             retry_count += 1
             if retry_count >= MAX_RETRIES:
-                logging.error(f"json_data: {completion.model_dump_json()}")
-                logging.error(f"{model}请求失败: {str(e)}")
+                logger.error(f"json_data: {completion.model_dump_json()}")
+                logger.error(f"{model}请求失败: {str(e)}")
                 return "请求失败"
             else:
-                logging.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
+                logger.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
 
 def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
     retry_count = 0
@@ -83,7 +84,7 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
                 except:
                     pass
             try:
-                logging.info("总结模型花费token: %s", chunk.usage.total_tokens)
+                logger.info("总结模型花费token: %s", chunk.usage.total_tokens)
             except Exception:
                 pass
             
@@ -92,11 +93,11 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
         except Exception as e:
             retry_count += 1
             if retry_count >= MAX_RETRIES:
-                logging.error(f"{model}请求失败: {str(e)}")
+                logger.error(f"{model}请求失败: {str(e)}")
                 yield "请求失败"
                 return
             else:
-                logging.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
+                logger.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
 
 def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
     retry_count = 0
@@ -137,28 +138,28 @@ def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
                 cost_totle_token = res_data['usageMetadata']['totalTokenCount']
                 cost_time = time.time() - start_time
                 speed = f"{model}处理速度 {cost_chat_token/cost_time:.2f} token/s"
-                logging.info(f"{model}总共花费{cost_totle_token} token")
-                logging.info(speed)
+                logger.info(f"{model}总共花费{cost_totle_token} token")
+                logger.info(speed)
             except Exception as e:
-                logging.debug(res_data['usageMetadata'])
-                logging.error(f"获取token输出速度失败 {e}")
+                logger.debug(res_data['usageMetadata'])
+                logger.error(f"获取token输出速度失败 {e}")
             return res_data['candidates'][0]['content']['parts'][0]['text']
         except Exception as e:
             retry_count += 1
-            logging.debug(res_data)
-            logging.debug(res)
+            logger.debug(res_data)
+            logger.debug(res)
             if retry_count >= MAX_RETRIES:
-                logging.error(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+                logger.error(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
                 return 'error'
             else:
-                logging.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+                logger.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
 
 def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
     retry_count = 0
     try:
         api_key = random.choice(SUMMARY_API_KEYS)
-        logging.debug("SUMMARY_API_KEY", SUMMARY_API_KEYS)
-        logging.debug("使用的GEMINI KEY", api_key)
+        logger.debug("SUMMARY_API_KEY", SUMMARY_API_KEYS)
+        logger.debug("使用的GEMINI KEY", api_key)
         # print(messages)
         # Gemini API URL
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
@@ -190,12 +191,12 @@ def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
 
     except Exception as e:
         retry_count += 1
-        logging.debug(res)
+        logger.debug(res)
         if retry_count >= MAX_RETRIES:
-            logging.error(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+            logger.error(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
             return sse_create_openai_data(content=f'Gemini出现问题{e}')
         else:
-            logging.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
+            logger.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
 
 def summary(messages:list[dict], model:str = SUMMARY_MODEL, stream:bool =False):
     """
@@ -208,9 +209,6 @@ def summary(messages:list[dict], model:str = SUMMARY_MODEL, stream:bool =False):
     Returns:
         模型回复的文本内容
     """
-
-    with open("summary.txt",'w') as fp:
-        fp.write(str(messages))
     
     if SUMMARY_API_TYPE == "GEMINI":
         if stream:
@@ -241,4 +239,4 @@ if __name__ == "__main__":
     # time.sleep(5)
     for ss in s:
         if ss:
-            logging.info(ss)
+            logger.info(ss)

@@ -2,8 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 from urllib.parse import urlparse
 import traceback
-import logging
-from config import logging_config  # noqa: F401
 import sys
 from typing import List, Dict, Tuple
 from pathlib import Path
@@ -19,8 +17,9 @@ from app.search.models import SearchResults,SearchResult,SearchRequest
 from app.utils.tools import get_time, response2json
 from app.utils.black_url import URL_BLACKLIST
 from app.utils.compress_content import compress_url_content
-from app.utils.config import \
-    SEARCH_KEYWORD_MODEL, SEARCH_API_LIMIT, SEARCH_KEYWORD_API_KEY,  SEARCH_KEYWORD_API_URL, MAX_SEARCH_RESULTS,\
+from config.logging_config import logger
+from config.base_config import \
+    SEARCH_API_LIMIT, SEARCH_KEYWORD_API_KEY,  SEARCH_KEYWORD_API_URL, MAX_SEARCH_RESULTS,\
     EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL, \
     EVALUATE_THREAD_NUM,\
     CRAWL_THREAD_NUM
@@ -99,7 +98,7 @@ def evaluate_single_batch(batch_idx : int, batch : List[Dict], search_purpose : 
             )
             response_text = response.choices[0].message.content.strip()
             scores_dict = response2json(response_text)
-            logging.info(f"批次 {batch_idx} 评分结果 (尝试 {retry_count+1}): {scores_dict}")
+            logger.info(f"批次 {batch_idx} 评分结果 (尝试 {retry_count+1}): {scores_dict}")
 
             # 检查输出是否包含所有索引
             if len(scores_dict) != len(batch):
@@ -110,17 +109,17 @@ def evaluate_single_batch(batch_idx : int, batch : List[Dict], search_purpose : 
                 try:
                     scores[key] = float(value)
                 except (ValueError, TypeError) as e:
-                    logging.warning(f"转换评分时出错: {e}, key={key}, value={value}")
+                    logger.warning(f"转换评分时出错: {e}, key={key}, value={value}")
             success = True
 
         except Exception as e:
-            logging.error(f"批次 {batch_idx} 评估时出错: {e}")
-            logging.error(traceback.format_exc())
+            logger.error(f"批次 {batch_idx} 评估时出错: {e}")
+            logger.error(traceback.format_exc())
             retry_count += 1
 
     # 多次尝试后仍未成功则采用默认评分
     if not success:
-        logging.warning(f"批次 {batch_idx} 在 {MAX_RETRIES} 次尝试后仍未获取评分,使用默认评分")
+        logger.warning(f"批次 {batch_idx} 在 {MAX_RETRIES} 次尝试后仍未获取评分,使用默认评分")
         for idx, result in enumerate(batch):
             global_idx = batch_idx * 10 + idx
             scores[global_idx] = result.get('score', 3)
@@ -141,7 +140,7 @@ def evaluate_relevance(search_purpose : str, search_results :List[Dict]):
     for i in range(0, len(search_results), BATCH_SIZE):
         batches.append(search_results[i:i+BATCH_SIZE])
     
-    logging.info(f"将 {len(search_results)} 个结果分为 {len(batches)} 批进行评估")
+    logger.info(f"将 {len(search_results)} 个结果分为 {len(batches)} 批进行评估")
     
     # 使用线程池并发处理评估任务
     with ThreadPoolExecutor(max_workers=min(EVALUATE_THREAD_NUM, len(batches))) as executor:
@@ -157,20 +156,20 @@ def evaluate_relevance(search_purpose : str, search_results :List[Dict]):
                 results_score_all += future.result()
             except Exception as e:
                 traceback.print_exc()
-                logging.error(f"获取评估结果时出错: {str(e)}")
-                logging.error(traceback.format_exc())
+                logger.error(f"获取评估结果时出错: {str(e)}")
+                logger.error(traceback.format_exc())
     
     # 按评分降序排序
     # sorted_scores = sorted(all_scores.items(), key=lambda x: x[1], reverse=True)
-    logging.info(f"评估完成,得到 {len(results_score_all)} 个评分结果")
+    logger.info(f"评估完成,得到 {len(results_score_all)} 个评分结果")
     return results_score_all
 
 def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults:
 
     if deep:
-        logging.info("详细搜索模式")
+        logger.info("详细搜索模式")
     else:
-        logging.info("简易搜索模式")
+        logger.info("简易搜索模式")
     # time.sleep(10)
     start_time = time.time()
     # 对搜索引擎返回的内容进行去重得到的结果
@@ -178,14 +177,14 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
     max_search_results = search_request.max_search_results
     search_purpose = search_request.search_purpose
     time_page = search_request.time_page
-    logging.info(f"开始搜索 - 目的: {search_purpose}")
+    logger.info(f"开始搜索 - 目的: {search_purpose}")
     
     with ThreadPoolExecutor(max_workers=SEARCH_API_LIMIT) as executor:
         futures = []
         for data in search_request.query_keys:
             query = data.key
             language = data.language
-            logging.info(f"搜索关键词: {query}, 语言: {language}, 时间范围: {time_page}")
+            logger.info(f"搜索关键词: {query}, 语言: {language}, 时间范围: {time_page}")
             if query and language:
                 futures.append(executor.submit(search_api_worker, query, language, time_page))
         
@@ -199,8 +198,8 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
                     if not is_duplicate(result, new_results):
                         new_results.append(result)
             except Exception as e:
-                logging.error(f"处理搜索结果时出错: {str(e)}")
-                logging.error(traceback.format_exc())
+                logger.error(f"处理搜索结果时出错: {str(e)}")
+                logger.error(traceback.format_exc())
     if URL_BLACKLIST:
         unique_results = [
             result for result in new_results
@@ -209,10 +208,10 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
     else:
         unique_results = new_results
     
-    logging.info(f"搜索完成,处理后共有 {len(unique_results)} 个结果,黑名单排除了{len(new_results)-len(unique_results)}个结果")
+    logger.info(f"搜索完成,处理后共有 {len(unique_results)} 个结果,黑名单排除了{len(new_results)-len(unique_results)}个结果")
     
     if not unique_results:
-        logging.warning("没有找到任何搜索结果")
+        logger.warning("没有找到任何搜索结果")
         return {}
     
     try:
@@ -221,26 +220,26 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
         top_results = sorted(results_score_all, key=lambda x:x['relevance_score'], reverse=True)
         top_results = top_results[:max_search_results:]
         for result in top_results:
-            logging.info(
+            logger.info(
                 "标题: %s, 相关性分数: %s, URL: %s",
                 result['title'],
                 result['relevance_score'],
                 result['url'],
             )
     except Exception as e:
-        logging.error(f"相关性评估出错,使用原始分数排序: {str(e)}")
-        logging.error(traceback.format_exc())
+        logger.error(f"相关性评估出错,使用原始分数排序: {str(e)}")
+        logger.error(traceback.format_exc())
         return {}    
     
-    logging.info(f"筛选得到 {len(top_results)} 个相关结果")
+    logger.info(f"筛选得到 {len(top_results)} 个相关结果")
     
     if not top_results:
-        logging.warning("没有找到相关结果")
+        logger.warning("没有找到相关结果")
         return {}
     if deep:
         deepscan_results = deepscan(top_results, search_request)
         search_time = time.time() - start_time
-        logging.info(f"搜索耗时: {search_time:.2f} 秒")
+        logger.info(f"搜索耗时: {search_time:.2f} 秒")
         
         return deepscan_results
     else:
@@ -257,7 +256,7 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
 
 def deepscan(search_response: list, search_request: SearchRequest) -> SearchResults:
     """获取网页的内容"""
-    logging.info(f"开始深度扫描 {len(search_response)} 个URL")
+    logger.info(f"开始深度扫描 {len(search_response)} 个URL")
     search_results_deepscan = SearchResults(search_request=search_request)
     search_purpose = search_request.search_purpose
     # 使用多线程并发处理URL内容获取
@@ -276,11 +275,11 @@ def deepscan(search_response: list, search_request: SearchRequest) -> SearchResu
                 try:
                     url_contents[idx] = future.result()
                 except Exception as e:
-                    logging.error(f"获取URL内容失败 ({search_response[idx]['url']}): {str(e)}")
-                    logging.error(traceback.format_exc())
+                    logger.error(f"获取URL内容失败 ({search_response[idx]['url']}): {str(e)}")
+                    logger.error(traceback.format_exc())
                     url_contents[idx] = None
     
-        logging.info("URL内容获取完毕")
+        logger.info("URL内容获取完毕")
         
         # 准备结构化结果
         results_with_content = []
@@ -318,5 +317,5 @@ if __name__ == "__main__":
     search_purpose = "了解2025年LPL春季赛季后赛的具体赛程安排和比赛时间"
     search_request = [SearchRequest(query['keys'],query['language'],[0, 0, 0],search_purpose) for query in querys]
     result = search_ai(search_request,deep=False)
-    logging.info(result.to_str())
-    logging.info(result.get_urls())
+    logger.info(result.to_str())
+    logger.info(result.get_urls())

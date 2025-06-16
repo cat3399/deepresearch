@@ -6,7 +6,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from app.utils.config import MAX_SEARCH_RESULTS
+from config.base_config import MAX_SEARCH_RESULTS
 
 class QueryKeys:
     """查询键类，用于存储搜索关键词和语言"""

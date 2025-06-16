@@ -1,12 +1,6 @@
 from flask import Flask
-from dotenv import load_dotenv
-import logging
 
-# 加载环境变量
-load_dotenv()
-
-# 导入配置和路由
-from app.utils.config import BASE_CHAT_MODEL
+from config.base_config import BASE_CHAT_MODEL
 from app.api.routes import register_routes
 
 # 创建 Flask 应用
@@ -16,7 +10,7 @@ app = Flask(__name__)
 register_routes(app)
 
 # 打印初始信息
-logging.info(f"基础对话使用的模型: {BASE_CHAT_MODEL}")
+print(f"基础对话使用的模型: {BASE_CHAT_MODEL}")
 
 if __name__ == "__main__":
     # 运行 Flask 服务
