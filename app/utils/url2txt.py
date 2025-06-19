@@ -44,46 +44,31 @@ def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> Optional[str]
         logger.error(f"firecrawl抓取 {url} 失败: {str(e)}")
         return 'error'
 
-# def by_crawl4ai(url: str, server_url: str = crawl4ai_api) -> Optional[str]:
-#     crawl_url = f"{crawl4ai_api}/crawl"
-#     task_url = f"{crawl4ai_api}/task"
-#     headers = {"Authorization": "Bearer cat3399"}
-#     # Making authenticated requests
-#     response = requests.post(
-#         crawl_url,
-#         headers=headers,
-#         json={
-#             "urls": url,
-#             "priority": 10
-#         }
-#     )
+def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
+    headers = {"Authorization": "Bearer cat3399"}
+    crawl_paylod = {
+        "urls" : [f"{url}"], 
+    }
+    response = requests.post(
+        server_url,
+        headers=headers,
+        json=crawl_paylod
+    )
+    rsp_json = response.json()
+    result_makrdown = rsp_json["results"][0]["markdown"]["raw_markdown"]
+    return result_makrdown
 
-#     # Checking task status
-#     # print(response.json())
-#     task_id = response.json()["task_id"]
 
-#     # Waiting for the task to finish
-#     max_wait = 50
-#     wait_time = 0
-#     while True:
-#         if requests.get(f"{task_url}/{task_id}", headers=headers).json()['status'] == "completed":
-#             result = requests.get(f"{task_url}/{task_id}", headers=headers)
-#             return result.json()['result']['markdown']
-#         wait_time += 1
-#         time.sleep(0.3)
-#         if wait_time > max_wait:
-#             return 'error'
-
-def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) -> Optional[str]:
-    try:
-        crawl_url = f"{server_url}/crawl"
-        data = {"url": url}
-        response = requests.post(crawl_url, json=data, timeout=35)
-        # print(response.text)
-        return response.json()['markdown']   
-    except Exception as e:
-        logger.error(f"crawl4ai抓取 {url} 失败: {str(e)}")
-        return 'error'
+# def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) -> Optional[str]:
+#     try:
+#         crawl_url = f"{server_url}/crawl"
+#         data = {"url": url}
+#         response = requests.post(crawl_url, json=data, timeout=35)
+#         # print(response.text)
+#         return response.json()['markdown']   
+#     except Exception as e:
+#         logger.error(f"crawl4ai抓取 {url} 失败: {str(e)}")
+#         return 'error'
 
 def url_to_markdown(url: str) -> Optional[str]:
     """
