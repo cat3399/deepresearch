@@ -252,6 +252,7 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
         return SearchResults(search_request=search_request)
 
 def deepresearch_tool(messages: list[dict]):
+    logger.info("开始深度研究")
     executed_search_plans = []
     max_plan_iterations = 12
     accumulated_search_results = SearchResults()
