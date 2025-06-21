@@ -8,7 +8,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from config.base_config import SUMMARY_MODEL
+from config.base_config import SUMMARY_MODEL,API_KEY
 from app.utils.prompt import SYS_PROMPT
 from app.utils.tools import get_time
 from app.chat.functions import process_messages,process_messages_stream
@@ -21,8 +21,8 @@ def register_routes(app):
         search_mode = 1
         # 校验 API key
         auth = request.headers.get("Authorization", "")
-        if auth != "Bearer sk-1":
-            return make_response(jsonify({"error": "Invalid API Key sk-1"}), 401)
+        if auth != f"Bearer {API_KEY}":
+            return make_response(jsonify({"error": f"Invalid API Key {auth}"}), 401)
         
         data = request.get_json()
         if "deep-research" in data.get("model"):
@@ -71,13 +71,12 @@ def register_routes(app):
     def models_api():
         # 校验 API key
         auth = request.headers.get("Authorization", "")
-        if auth != "Bearer sk-1":
-            return make_response(jsonify({"error": "Invalid API Key"}), 401)
+        if auth != f"Bearer {API_KEY}":
+            return make_response(jsonify({"error": f"Invalid API Key {auth}"}), 401)
         
         models = {
             "data": [
                 {"id": f"{SUMMARY_MODEL}-search", "object": "model", "owned_by": "cat3399"},
-                {"id": f"{SUMMARY_MODEL}-re-search", "object": "model", "owned_by": "cat3399"},
                 {"id": f"{SUMMARY_MODEL}-deep-research", "object": "model", "owned_by": "cat3399"},
             ]
         }

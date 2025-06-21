@@ -15,6 +15,8 @@ env_path = ROOT_DIR.joinpath(".env")
 if os.path.exists(env_path):
     load_dotenv(env_path)
     logger.info("环境变量文件已加载")
+
+API_KEY = os.getenv("API_KEY","sk-1")
 # 搜索引擎配置 SearXNG可以使用https://seek.nuer.cc/ (不保证一定可用)
 # SearXNG配置（需要支持JSON格式）
 SEARXNG_URL = os.getenv("SEARXNG_URL")
@@ -55,7 +57,8 @@ if CRAWL4AI_API_URL:
 
 CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM", "5")) # 添加默认值以防未设置
 MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS", "6")) # 添加默认值以防未设置
-
+MAX_DEEPRESEARCH_RESULTS = int(os.getenv("MAX_DEEPRESEARCH_RESULTS","3"))
+MAX_STEPS_NUM = int(os.getenv("MAX_STEPS_NUM", "12"))
 #############################################
 # 模型配置
 #############################################
@@ -78,17 +81,20 @@ EVALUATE_MODEL=os.getenv("EVALUATE_MODEL", BASE_CHAT_MODEL)
 # 网页内容压缩提取模型配置（最好选择输出最快的服务商,并且允许长输入输出） 
  # 选择GEMINI或OPENAI格式的API URL,默认使用GEMINI模型 如果使用gemini只有一个api key的时候会报429错误 建议至少两个
 COMPRESS_API_TYPE = os.getenv("COMPRESS_API_TYPE")
+if COMPRESS_API_TYPE:
+    COMPRESS_API_TYPE = COMPRESS_API_TYPE.upper()
 COMPRESS_API_KEY = os.getenv("COMPRESS_API_KEY")
 COMPRESS_API_URL = os.getenv("COMPRESS_API_URL")
 COMPRESS_MODEL = os.getenv("COMPRESS_MODEL")
 
 # 最后总结搜索结果的模型配置（留空表示和基础对话模型相同）
 SUMMARY_API_TYPE = os.getenv("SUMMARY_API_TYPE")
+if SUMMARY_API_TYPE:
+    SUMMARY_API_TYPE = SUMMARY_API_TYPE.upper()
 SUMMARY_API_KEY = os.getenv("SUMMARY_API_KEY", BASE_CHAT_API_KEY)
 SUMMARY_API_URL = os.getenv("SUMMARY_API_URL", BASE_CHAT_API_URL)
 SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", BASE_CHAT_MODEL)
 
-MAX_RESEARCH_NUM = 3
 AVAILABLE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls']
 #############################################
 # 配置校验

@@ -282,8 +282,7 @@ def format_urls(urls: List[str]):
     
     for i, url in enumerate(urls, 1):
         if url:
-            display_url = url if len(url) <= 100 else url[:120] + "..."
-            yield f"\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0{i}. {display_url}\n"
+            yield f"\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0{i}. {url}\n"
     
     yield "\n"
 

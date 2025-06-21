@@ -17,9 +17,9 @@ from app.search.models import SearchRequest, SearchResult, SearchResults
 from app.search.search_after_ai import deepscan, is_duplicate
 from app.search.search_searxng_api import search_api_worker
 from app.utils.black_url import URL_BLACKLIST
-from config.base_config import (SEARCH_API_LIMIT,
+from config.base_config import (SEARCH_API_LIMIT,MAX_DEEPRESEARCH_RESULTS,MAX_STEPS_NUM,
                               SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL,SEARCH_KEYWORD_MODEL,
-                              EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL, EVALUATE_THREAD_NUM
+                              EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL,
                               )
 from config.logging_config import logger
 from app.utils.prompt import (DEEPRESEARCH_FIRST_PROMPT,
@@ -194,7 +194,7 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
         return SearchResults(search_request=search_request, results=[])
 
     # 筛选有价值的URL
-    max_valuable_urls = max(1, int(search_request.max_search_results / 2))
+    max_valuable_urls = MAX_DEEPRESEARCH_RESULTS
     value_url_prompt = GET_VALUE_URL_PROMPT.substitute(
         current_time=get_time(),
         search_results=search_results.to_str(),
@@ -254,7 +254,7 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
 def deepresearch_tool(messages: list[dict]):
     logger.info("开始深度研究")
     executed_search_plans = []
-    max_plan_iterations = 12
+    max_plan_iterations = MAX_STEPS_NUM
     accumulated_search_results = SearchResults()
     yield "🔍 **开始深度研究搜索...**\n\n"
 

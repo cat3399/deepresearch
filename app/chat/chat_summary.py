@@ -33,7 +33,7 @@ def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
             completion = client.chat.completions.create(
                 model=model,
                 messages=messages,
-                temperature=0.1
+                # temperature=0.1
             )
             response_data = completion.choices[0].message.content
             # print(completion)
@@ -127,7 +127,7 @@ def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
                 "contents": messages_tmp,
                 "generationConfig": {
                     # "maxOutputTokens": 8192,
-                    "temperature": 0.1
+                    # "temperature": 0.1
                 }
             }  
             # print(json.dumps(payload))

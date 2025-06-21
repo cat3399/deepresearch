@@ -82,7 +82,10 @@ def url_to_markdown(url: str) -> Optional[str]:
     attempt_count = 0
     max_attempts = 2
     best_result = ''  # 存储最佳结果
+    if not url:
+        return ""
     url = url.strip(' ')
+    url = url.lower()
     if url.endswith(tuple(AVAILABLE_EXTENSIONS)):
         logger.info(f"下载文件 { url.rsplit('//')[-1] } 中...")
         file_name = download_file(url)
