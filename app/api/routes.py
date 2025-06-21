@@ -8,10 +8,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from config.base_config import SUMMARY_MODEL,API_KEY
 from app.utils.prompt import SYS_PROMPT
 from app.utils.tools import get_time
 from app.chat.functions import process_messages,process_messages_stream
+from config.base_config import SUMMARY_MODEL,API_KEY
 
 SHOW_MODEL = "search-llm"
 

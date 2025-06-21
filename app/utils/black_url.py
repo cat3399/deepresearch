@@ -1,7 +1,5 @@
-# --- 黑名单加载功能 ---
 import sys
 from pathlib import Path
-from dotenv import load_dotenv
 
 # --- 配置和路径设置 ---
 # 将项目根目录添加到sys.path
@@ -31,7 +29,5 @@ def load_blacklist(filepath):
         # 出错时返回空集合，避免影响正常流程，但会记录错误
     return list(blacklist)
 
-# --- 在模块加载时加载一次黑名单 ---
-# 这比在每次调用 search_api_worker 时加载更高效
 URL_BLACKLIST = load_blacklist(BLACKLIST_FILE)
 logger.debug(URL_BLACKLIST)

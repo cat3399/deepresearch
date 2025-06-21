@@ -1,6 +1,5 @@
 import sys
 import time
-import random
 import requests
 import json
 from pathlib import Path
@@ -15,11 +14,6 @@ from app.utils.url2txt import url_to_markdown
 from config.base_config import COMPRESS_API_KEY,COMPRESS_MODEL,COMPRESS_API_URL,COMPRESS_API_TYPE
 from config.logging_config import logger
 from app.utils.prompt import SYSTEM_PROMPT_SUMMARY
-
-API_KEYS = COMPRESS_API_KEY.split(",")
-MODEL = COMPRESS_MODEL
-
-
 
 """
 target_type 1: 
@@ -91,10 +85,7 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
             
             for attempt in range(3):
                 try:
-                    # 选择随机API密钥
-                    api_key = random.choice(API_KEYS)
-                    # Gemini API URL
-                    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={api_key}"
+                    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{COMPRESS_MODEL}:generateContent?key={COMPRESS_API_KEY}"
                     # 发送POST请求
                     response = requests.post(api_url, headers=headers, data=json.dumps(payload),timeout=180) # 三分钟超时
                     response.raise_for_status()
@@ -209,7 +200,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             for attempt in range(3):
                 try:
                     completion = client.chat.completions.create(
-                        model=MODEL,
+                        model=COMPRESS_MODEL,
                         messages=messages,
                         temperature=0.1,
                     )
@@ -233,10 +224,10 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             try:
                 # 获取token消耗信息
                 if completion and completion.usage:
-                    logger.info(f"{MODEL} token消耗: {completion.usage.total_tokens}")
+                    logger.info(f"{COMPRESS_MODEL} token消耗: {completion.usage.total_tokens}")
                 logger.info(f"网页:{url}")
-                logger.info(f"{MODEL}处理耗时: {processing_time:.2f}秒")
-                logger.info(f"{MODEL}处理速度: {len(response_text) / processing_time:.2f}字符/秒")
+                logger.info(f"{COMPRESS_MODEL}处理耗时: {processing_time:.2f}秒")
+                logger.info(f"{COMPRESS_MODEL}处理速度: {len(response_text) / processing_time:.2f}字符/秒")
                 logger.info(f"原始内容长度{html_len}")
                 logger.info(f"压缩后内容长度{len(response_text)}")
                 logger.info(f"压缩率{len(response_text)/html_len:.2f} \n")
@@ -252,7 +243,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             return html_content
             
     except Exception as e:
-        logger.error(f"{MODEL}处理失败: {str(e)}")
+        logger.error(f"{COMPRESS_MODEL}处理失败: {str(e)}")
         return ''
 
 

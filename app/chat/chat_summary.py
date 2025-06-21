@@ -22,8 +22,8 @@ if SUMMARY_API_TYPE != "GEMINI":
         api_key = SUMMARY_API_KEY,
         base_url = SUMMARY_API_URL,
     )
+
 MAX_RETRIES = 3
-SUMMARY_API_KEYS = SUMMARY_API_KEY.split(",")
 def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
     retry_count = 0
     while retry_count < MAX_RETRIES:
@@ -104,7 +104,7 @@ def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
     while retry_count < MAX_RETRIES:
         try:
             start_time = time.time()
-            api_key = random.choice(SUMMARY_API_KEY)
+            api_key = SUMMARY_API_KEY
             # print(messages)
             # Gemini API URL
             api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -156,7 +156,7 @@ def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
 def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
     retry_count = 0
     try:
-        api_key = random.choice(SUMMARY_API_KEYS)
+        api_key = SUMMARY_API_KEY
 
         # print(messages)
         # Gemini API URL

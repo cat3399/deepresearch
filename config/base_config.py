@@ -1,6 +1,6 @@
 import os
-from string import Template
 import sys
+import random
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -16,8 +16,33 @@ if os.path.exists(env_path):
     load_dotenv(env_path)
     logger.info("环境变量文件已加载")
 
-API_KEY = os.getenv("API_KEY","sk-1")
-# 搜索引擎配置 SearXNG可以使用https://seek.nuer.cc/ (不保证一定可用)
+def get_random_api_key(api_key_str):
+    """从逗号分隔的API密钥字符串中随机选择一个
+    
+    Args:
+        api_key_str: 逗号分隔的API密钥字符串，如 "key1,key2,key3"
+        
+    Returns:
+        随机选择的API密钥，如果输入为空则返回空字符串
+    """
+    if not api_key_str:
+        return ""
+    
+    keys = [key.strip() for key in api_key_str.split(',') if key.strip()]
+    if not keys:
+        return ""
+    
+    selected_key = random.choice(keys)
+    if len(keys) > 1:
+        logger.info(f"从 {len(keys)} 个API密钥中随机选择了一个")
+    
+    return selected_key
+
+API_KEY = os.getenv("API_KEY", "sk-1")
+
+#############################################
+# 搜索引擎配置
+#############################################
 # SearXNG配置（需要支持JSON格式）
 SEARXNG_URL = os.getenv("SEARXNG_URL")
 SEARCH_API_LIMIT = os.getenv("SEARCH_API_LIMIT")
@@ -25,7 +50,7 @@ if SEARCH_API_LIMIT:
     SEARCH_API_LIMIT = int(SEARCH_API_LIMIT)
 
 # tavily 配置
-TAVILY_KEY = os.getenv("TAVILY_KEY","")
+TAVILY_KEY = get_random_api_key(os.getenv("TAVILY_KEY", ""))
 TAVILY_MAX_NUM = os.getenv("TAVILY_MAX_NUM","20")
 #############################################
 # 网页爬虫配置
@@ -34,7 +59,7 @@ TAVILY_MAX_NUM = os.getenv("TAVILY_MAX_NUM","20")
 
 # FireCrawl配置
 FIRECRAWL_API_URL = os.getenv("FIRECRAWL_API_URL")
-FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
+FIRECRAWL_API_KEY = get_random_api_key(os.getenv("FIRECRAWL_API_KEY"))
 
 # 如果用户提供了API Key但URL为空或未设置，则默认为官方URL
 if FIRECRAWL_API_KEY and not FIRECRAWL_API_URL:
@@ -55,35 +80,35 @@ if FIRECRAWL_API_URL:
 if CRAWL4AI_API_URL:
     CRAWL4AI_API_URL = CRAWL4AI_API_URL.rstrip('/')
 
-CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM", "5")) # 添加默认值以防未设置
-MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS", "6")) # 添加默认值以防未设置
+CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM", "5"))
+MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS", "6"))
 MAX_DEEPRESEARCH_RESULTS = int(os.getenv("MAX_DEEPRESEARCH_RESULTS","3"))
 MAX_STEPS_NUM = int(os.getenv("MAX_STEPS_NUM", "12"))
 #############################################
 # 模型配置
 #############################################
-# 基础对话模型配置（需要支持function calling,模型性能差一些也无所谓,只是调用联网搜索的函数）
-BASE_CHAT_API_KEY = os.getenv("BASE_CHAT_API_KEY")
+# 基础对话模型配置（需要支持function calling）
+BASE_CHAT_API_KEY = get_random_api_key(os.getenv("BASE_CHAT_API_KEY"))
 BASE_CHAT_API_URL = os.getenv("BASE_CHAT_API_URL")
 BASE_CHAT_MODEL = os.getenv("BASE_CHAT_MODEL")
 
 # 生成联网搜索关键词的模型配置（留空表示和基础对话模型相同）
-SEARCH_KEYWORD_API_KEY = os.getenv("SEARCH_KEYWORD_API_KEY", BASE_CHAT_API_KEY)
+SEARCH_KEYWORD_API_KEY = get_random_api_key(os.getenv("SEARCH_KEYWORD_API_KEY", os.getenv("BASE_CHAT_API_KEY", "")))
 SEARCH_KEYWORD_API_URL = os.getenv("SEARCH_KEYWORD_API_URL", BASE_CHAT_API_URL)
 SEARCH_KEYWORD_MODEL = os.getenv("SEARCH_KEYWORD_MODEL", BASE_CHAT_MODEL)
 
 # 评估网页价值的模型配置
 EVALUATE_THREAD_NUM = int(os.getenv("EVALUATE_THREAD_NUM", 5))
-EVALUATE_API_KEY=os.getenv("EVALUATE_API_KEY", BASE_CHAT_API_KEY)
-EVALUATE_API_URL=os.getenv("EVALUATE_API_URL", BASE_CHAT_API_URL)
-EVALUATE_MODEL=os.getenv("EVALUATE_MODEL", BASE_CHAT_MODEL)
+EVALUATE_API_KEY = get_random_api_key(os.getenv("EVALUATE_API_KEY", os.getenv("BASE_CHAT_API_KEY", "")))
+EVALUATE_API_URL = os.getenv("EVALUATE_API_URL", BASE_CHAT_API_URL)
+EVALUATE_MODEL = os.getenv("EVALUATE_MODEL", BASE_CHAT_MODEL)
 
 # 网页内容压缩提取模型配置（最好选择输出最快的服务商,并且允许长输入输出） 
  # 选择GEMINI或OPENAI格式的API URL,默认使用GEMINI模型 如果使用gemini只有一个api key的时候会报429错误 建议至少两个
 COMPRESS_API_TYPE = os.getenv("COMPRESS_API_TYPE")
 if COMPRESS_API_TYPE:
     COMPRESS_API_TYPE = COMPRESS_API_TYPE.upper()
-COMPRESS_API_KEY = os.getenv("COMPRESS_API_KEY")
+COMPRESS_API_KEY = get_random_api_key(os.getenv("COMPRESS_API_KEY"))
 COMPRESS_API_URL = os.getenv("COMPRESS_API_URL")
 COMPRESS_MODEL = os.getenv("COMPRESS_MODEL")
 
@@ -91,7 +116,7 @@ COMPRESS_MODEL = os.getenv("COMPRESS_MODEL")
 SUMMARY_API_TYPE = os.getenv("SUMMARY_API_TYPE")
 if SUMMARY_API_TYPE:
     SUMMARY_API_TYPE = SUMMARY_API_TYPE.upper()
-SUMMARY_API_KEY = os.getenv("SUMMARY_API_KEY", BASE_CHAT_API_KEY)
+SUMMARY_API_KEY = get_random_api_key(os.getenv("SUMMARY_API_KEY", os.getenv("BASE_CHAT_API_KEY", "")))
 SUMMARY_API_URL = os.getenv("SUMMARY_API_URL", BASE_CHAT_API_URL)
 SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", BASE_CHAT_MODEL)
 
@@ -134,7 +159,6 @@ def validate_config():
         details = []
         all_fallback_to_base = True
         for suffix in suffixes:
-            # Check if the specific environment variable (e.g., "SEARCH_KEYWORD_API_KEY") was set in .env
             if os.getenv(f"{prefix}{suffix}") is None:
                 details.append(suffix)
             else:
@@ -162,7 +186,6 @@ def validate_config():
         errors.append("缺少网页内容压缩提取模型API地址 (COMPRESS_API_URL)。")
     if not COMPRESS_MODEL:
         errors.append("缺少网页内容压缩提取模型名称 (COMPRESS_MODEL)。")
-    # COMPRESS_API_TYPE 是可选的，如果未设置则为 None，由使用方处理。
 
     # 7. 总结搜索结果模型配置校验
     summary_fallback_details, summary_all_fallback = get_fallback_details("SUMMARY_", ["API_KEY", "API_URL", "MODEL"])
