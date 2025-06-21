@@ -61,7 +61,7 @@ python main.py
 
 ## 🛠️ 使用示例
 
-您可以使用任何兼容 OpenAI API 格式的客户端（如 Postman、curl 或各种编程语言的库）与服务进行交互。
+您可以使用任何兼容 OpenAI API 格式的客户端（如 Cherry Studio或者OpenWebui）与服务进行交互。
 
 **请求 `/v1/chat/completions`:**
 
@@ -85,36 +85,8 @@ python main.py
 
     支持的模型 ID 可以在 `/v1/models` 接口获取，通常包含 `-search`, `-re-search`, `-deep-research` 等后缀以指示不同的处理流程。
 
-## 📁 项目结构
 
 ```
-.
-├── app/                  # 应用核心逻辑
-│   ├── api/              # API 路由定义 (routes.py)
-│   ├── chat/             # 聊天处理、函数调用、总结 (functions.py, chat_summary.py)
-│   ├── search/           # 搜索逻辑核心 (fc_search.py, fc_deepresearch.py, search_after_ai.py)
-│   ├── utils/            # 工具函数、提示词 (prompt.py, tools.py, url2txt.py)
-│   └── tests/            # 测试用例
-├── config/               # 配置相关
-│   ├── base_config.py    # 基础配置和环境变量加载
-│   └── logging_config.py # 日志配置
-├── tmp_files/            # 临时文件下载目录
-├── main.py               # Flask 应用入口
-├── requirements.txt      # Python 依赖列表
-├── .env.template         # 环境变量模板文件
-└── README.md             # 本文件
-```
-
-## 🔧 核心模块解析
-
-*   `main.py`: Flask 应用的启动入口，注册 API 路由。
-*   `app/api/routes.py`: 定义了所有 API 端点及其处理逻辑。
-*   `app/chat/functions.py`: 处理聊天消息流，集成搜索工具调用和结果总结。
-*   `app/search/fc_search.py`: 实现常规搜索流程的函数调用。
-*   `app/search/fc_deepresearch.py`: 实现深度研究流程，包括搜索计划的生成、执行和迭代。
-*   `app/search/search_after_ai.py`: 包含搜索结果的评估、筛选和网页内容的深度提取（deepscan）逻辑。
-*   `app/utils/prompt.py`: 存储了项目中使用的各种详细提示，用于指导 LLM 的行为。
-*   `config/base_config.py`: 加载和校验 `.env` 文件中的配置，并提供全局配置变量。
 
 ## 📦 主要依赖
 
