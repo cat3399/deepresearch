@@ -137,7 +137,7 @@ python main.py
 
 以Cherry Studio为例
 
-![使用示例_CherryStudio](D:\pythonProject\ai-search\img\使用示例_CherryStudio.png)
+![使用示例_CherryStudio](img\使用示例_CherryStudio.png)
 
 > **提示**: 使用带 `deep-research` 的模型 ID 即可触发深度研究模式。支持的模型 ID 列表可通过 `/v1/models` 接口获取。
 
