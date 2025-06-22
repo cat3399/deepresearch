@@ -37,8 +37,7 @@ def register_routes(app):
         if STREAM_MODE:
             rsp_stream = process_messages_stream(messages,search_mode=search_mode)
             return Response(stream_with_context(rsp_stream), mimetype='text/event-stream', headers={
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive'
+                'Cache-Control': 'no-cache'
             })
         else:
             # 以第一个role为用户角色的消息为用户输入
