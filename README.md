@@ -160,6 +160,7 @@ python main.py
 ## 💡 效果展示
 
 ### 总结类
+> prompt:获取gemini claude deepseek glm qwen全部对话模型的参数,和官方api的价格,用表格清晰的展示,我要非常完整的数据,最后总结的时候不要有遗漏
 
 > 本项目效果 (除最后总结使用 Gemini 2.5 Pro, 其余均使用 2.5 Flash 模型)
 
@@ -173,6 +174,7 @@ python main.py
 ![模型总结-openai](img/模型总结-openai.png)
 
 ### 冷门问题
+> prompt:rk3399 怎么在linux下,使用qemu 的kvm加速
 
 > 关于 "RK3399 QEMU 启用 KVM"，重点在于大小核，**需要使用 `taskset` 绑核**。
 
