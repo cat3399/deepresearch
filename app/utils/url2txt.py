@@ -1,4 +1,5 @@
 import sys
+import time
 import requests
 import json
 from typing import Optional
@@ -31,7 +32,7 @@ def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> Optional[str]
             "Authorization": f"Bearer {FIRECRAWL_API_KEY}",
         }
         
-        response = requests.request("POST", scrape_url, json=payload, headers=headers,timeout=20)
+        response = requests.request("POST", scrape_url, json=payload, headers=headers,timeout=30)
         # print(response.text)
         # print(response.status_code)
         response.raise_for_status()  # 检查HTTP错误
@@ -45,13 +46,13 @@ def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> Optional[str]
         return 'error'
 
 def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
-    headers = {"Authorization": "Bearer cat3399"}
+    # headers = {"Authorization": "Bearer cat3399"}
     crawl_paylod = {
         "urls" : [f"{url}"], 
     }
     response = requests.post(
         server_url,
-        headers=headers,
+        # headers=headers,
         json=crawl_paylod
     )
     rsp_json = response.json()
@@ -132,6 +133,7 @@ def url_to_markdown(url: str) -> Optional[str]:
         except Exception as e:
             logger.error(f"抓取失败: {str(e)}")
             attempt_count += 1
+            time.sleep(1)
     
     # 如果没有找到长度>1000的结果,但有其他结果,返回最佳结果
     if best_result:
