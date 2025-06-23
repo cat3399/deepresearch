@@ -18,32 +18,26 @@ from config.base_config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_
 from config.logging_config import logger
 from app.utils.tools import download_file,extract_text_from_file
 
-def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> Optional[str]:
-    try:
-        scrape_url = f"{server_url}/v1/scrape"
-        payload = {
-            "url": url,
-            "onlyMainContent": True,
-            "formats": ["markdown"],
-        }
-        
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {FIRECRAWL_API_KEY}",
-        }
-        
-        response = requests.request("POST", scrape_url, json=payload, headers=headers,timeout=30)
-        # print(response.text)
-        # print(response.status_code)
-        response.raise_for_status()  # 检查HTTP错误
-        
-        data_json = json.loads(response.text)
-        markdown_str = data_json['data']['markdown']
-        return markdown_str
-        
-    except Exception as e:
-        logger.error(f"firecrawl抓取 {url} 失败: {str(e)}")
-        return 'error'
+MIN_RESULT_LEN = 1000
+
+def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> str:
+    scrape_url = f"{server_url}/v1/scrape"
+    payload = {
+        "url": url,
+        "onlyMainContent": True,
+        "formats": ["markdown"],
+    }
+    
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {FIRECRAWL_API_KEY}",
+    }
+    response = requests.post(scrape_url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    
+    data_json = json.loads(response.text)
+    markdown_str = data_json['data']['markdown']
+    return markdown_str
 
 def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
     # headers = {"Authorization": "Bearer cat3399"}
@@ -55,6 +49,7 @@ def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
         # headers=headers,
         json=crawl_paylod
     )
+    response.raise_for_status()
     rsp_json = response.json()
     result_makrdown = rsp_json["results"][0]["markdown"]["raw_markdown"]
     return result_makrdown
@@ -105,10 +100,10 @@ def url_to_markdown(url: str) -> Optional[str]:
             if FIRECRAWL_API_URL:
                 result = by_firecrawl(url)
                 # print(result)
-                if len(result) > 1000 and result != 'error':
+                if len(result) > MIN_RESULT_LEN and result != 'error':
                     logger.info(f'使用firecrawl抓取 {url} 成功 \n')
                     return result
-                elif result != 'error' and len(result) > len(best_result):
+                elif len(result) > len(best_result):
                     best_result = result  # 保存最佳结果
                 
             if CRAWL4AI_API_URL:
@@ -116,7 +111,7 @@ def url_to_markdown(url: str) -> Optional[str]:
                 result = by_crawl4ai(url)
                 # print(result)
                 if result and result != 'error':
-                    if len(result) > 1000:
+                    if len(result) > MIN_RESULT_LEN:
                         logger.info(f'使用crawl4ai抓取 {url} 成功 \n')
                         return result
                     elif len(result) > len(best_result):
