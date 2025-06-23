@@ -83,6 +83,7 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
                         yield sse_create_openai_data(content=chunk_content)
                 except:
                     pass
+            yield sse_create_openai_data(content="")
             try:
                 logger.info("总结模型花费token: %s", chunk.usage.total_tokens)
             except Exception:
