@@ -123,6 +123,11 @@ pip install -r requirements.txt
 
 ### 4. 运行服务
 
+一键测试所有API是否正常
+```
+python main.py --test
+```
+
 在项目根目录下运行：
 
 ```bash

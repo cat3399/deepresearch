@@ -7,10 +7,8 @@ from config.logging_config import logger
 from config.base_config import BASE_CHAT_MODEL
 from app.api.routes import register_routes
 
-# 创建 Flask 应用
 app = Flask(__name__)
 
-# 注册路由
 register_routes(app)
 
 # 打印初始信息
@@ -21,11 +19,7 @@ if __name__ == "__main__":
         logger.info("开始执行测试...")
         
         test_to_run = sys.argv[2] if len(sys.argv) > 2 else None
-        
-        # 执行测试并获取退出码
         exit_code = run_tests(specific_test_name=test_to_run)
-        
-        # 使用 sys.exit 将测试结果（成功0/失败1）作为程序的退出码
         sys.exit(exit_code)
     else:
         # 如果没有 'test' 参数，正常启动服务
