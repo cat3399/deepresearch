@@ -236,3 +236,7 @@ python main.py
     *   **相同方式共享** — 如果您再混合、转换，或者基于本作品进行创作，您必须基于与原先许可协议相同的许可协议来分发您的贡献。
 
 > 如果您希望将本项目用于商业目的，请联系作者获取商业授权。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=cat3399/deepresearch&Date)](https://star-history.com/#cat3399/deepresearch&Date)
