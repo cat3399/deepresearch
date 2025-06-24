@@ -14,7 +14,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from config.base_config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL, AVAILABLE_EXTENSIONS
+from config.base_config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL, AVAILABLE_EXTENSIONS, JINA_API_KEY, JINA_API_URL
 from config.logging_config import logger
 from app.utils.tools import download_file,extract_text_from_file
 
@@ -30,8 +30,9 @@ def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> str:
     
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {FIRECRAWL_API_KEY}",
     }
+    if FIRECRAWL_API_KEY:
+        headers["Authorization"] = f"Bearer {FIRECRAWL_API_KEY}"
     response = requests.post(scrape_url, json=payload, headers=headers, timeout=30)
     response.raise_for_status()
     
@@ -54,17 +55,18 @@ def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
     result_makrdown = rsp_json["results"][0]["markdown"]["raw_markdown"]
     return result_makrdown
 
-
-# def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) -> Optional[str]:
-#     try:
-#         crawl_url = f"{server_url}/crawl"
-#         data = {"url": url}
-#         response = requests.post(crawl_url, json=data, timeout=35)
-#         # print(response.text)
-#         return response.json()['markdown']   
-#     except Exception as e:
-#         logger.error(f"crawl4ai抓取 {url} 失败: {str(e)}")
-#         return 'error'
+def by_jina(url: str, server_url: str = JINA_API_URL) -> str:
+    payload = {
+        "url": url,
+    }
+    headers = {
+        "Content-Type": "application/json",
+    }
+    if JINA_API_KEY:
+        headers["Authorization"] = f"Bearer {JINA_API_KEY}"
+    response = requests.post(server_url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    return response.text
 
 def url_to_markdown(url: str) -> Optional[str]:
     """
@@ -95,50 +97,64 @@ def url_to_markdown(url: str) -> Optional[str]:
             return "提取内容失败!"
 
     while attempt_count < max_attempts:
+        attempt_count += 1  # 在循环开始就增加计数
         try:
-            # 尝试使用firecrawl抓取
+            # firecrawl
             if FIRECRAWL_API_URL:
-                result = by_firecrawl(url)
-                # print(result)
-                if len(result) > MIN_RESULT_LEN and result != 'error':
-                    logger.info(f'使用firecrawl抓取 {url} 成功 \n')
-                    return result
-                elif len(result) > len(best_result):
-                    best_result = result  # 保存最佳结果
-                
-            if CRAWL4AI_API_URL:
-                # 尝试使用crawl4ai抓取
-                result = by_crawl4ai(url)
-                # print(result)
-                if result and result != 'error':
-                    if len(result) > MIN_RESULT_LEN:
-                        logger.info(f'使用crawl4ai抓取 {url} 成功 \n')
+                try:
+                    result = by_firecrawl(url)
+                    if result and result != 'error' and len(result) > MIN_RESULT_LEN:
+                        logger.info(f'使用firecrawl抓取 {url} 成功')
                         return result
-                    elif len(result) > len(best_result):
-                        best_result = result  # 保存最佳结果
-                        logger.info('保存crawl4ai结果,但继续尝试获取更好的结果')
-                    else:
-                        logger.info('crawl4ai结果过短,继续尝试')
-                
-                # 如果两种方法都没有产生足够长的结果,增加尝试次数
-                attempt_count += 1
-                if attempt_count < max_attempts:
-                    logger.info(f"结果长度不足,第 {attempt_count+1} 次尝试抓取...")
-                
+                    elif result and len(result) > len(best_result):
+                        best_result = result
+                except Exception as e:
+                    logger.error(f"Firecrawl抓取失败: {str(e)}")
+
+            # crawl4ai 
+            if CRAWL4AI_API_URL:
+                try:
+                    result = by_crawl4ai(url)
+                    if result and result != 'error' and len(result) > MIN_RESULT_LEN:
+                        logger.info(f'使用crawl4ai抓取 {url} 成功')
+                        return result
+                    elif result and len(result) > len(best_result):
+                        best_result = result
+                        logger.info('保存crawl4ai结果,继续尝试获取更好结果')
+                except Exception as e:
+                    logger.error(f"Crawl4ai抓取失败: {str(e)}")
+
+            # jina
+            if JINA_API_URL:
+                try:
+                    result = by_jina(url)
+                    if result and result != 'error' and len(result) > MIN_RESULT_LEN:
+                        logger.info(f'使用Jina抓取 {url} 成功')
+                        return result
+                    elif result and len(result) > len(best_result):
+                        best_result = result
+                        logger.info('保存Jina结果,继续尝试获取更好结果')
+                except Exception as e:
+                    logger.error(f"Jina抓取失败: {str(e)}")
+
+            if attempt_count < max_attempts:
+                logger.info(f"抓取过程出现问题,第 {attempt_count+1} 次尝试抓取...")
+                time.sleep(1)  # 添加重试延迟
+
         except Exception as e:
-            logger.error(f"抓取失败: {str(e)}")
-            attempt_count += 1
-            time.sleep(1)
-    
-    # 如果没有找到长度>1000的结果,但有其他结果,返回最佳结果
+            logger.error(f"抓取过程发生未知错误: {str(e)}")
+            if attempt_count < max_attempts:
+                time.sleep(1)
+
     if best_result:
-        logger.info(f"未找到长度>1000的结果,返回最佳可用结果(长度:{len(best_result)})")
+        logger.info(f"返回最佳可用结果(长度:{len(best_result)})")
         return best_result
-            
-    return ''  # 如果所有尝试都失败,返回空字符串
+
+    return ''
+
 # 使用示例
 if __name__ == "__main__":
-    test_url = "https://xxgk.nepu.edu.cn/2025niandongbeishiyoudaxuebumenyusuan.pdf"
+    test_url = "https://ai.google.dev/gemini-api/docs/music-generation?hl=zh-cn"
     result = url_to_markdown(test_url)
     logger.info(result)
     # if result:

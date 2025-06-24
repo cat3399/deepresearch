@@ -74,11 +74,17 @@ if FIRECRAWL_API_URL and FIRECRAWL_API_URL.rstrip('/') == "https://api.firecrawl
 # Crawl4AI配置
 CRAWL4AI_API_URL = os.getenv("CRAWL4AI_API_URL")
 
+# Jina配置
+JINA_API_URL = os.getenv("JINA_API_URL")
+JINA_API_KEY = os.getenv("JINA_API_KEY")
+
 # 统一处理URL末尾的斜杠
 if FIRECRAWL_API_URL:
     FIRECRAWL_API_URL = FIRECRAWL_API_URL.rstrip('/')
 if CRAWL4AI_API_URL:
     CRAWL4AI_API_URL = CRAWL4AI_API_URL.rstrip('/')
+if JINA_API_URL:
+    JINA_API_URL = JINA_API_URL.rstrip('/')
 
 CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM", "5"))
 MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS", "6"))
@@ -138,13 +144,15 @@ def validate_config():
     elif not TAVILY_KEY:
         warnings.append("缺少 Tavily KEY 配置，将仅使用 SearXNG (如果已配置)。")
     
-    # 2. 网页爬虫配置校验 (FIRECRAWL_API_URL 已经是预处理后的有效URL或空字符串)
-    if not FIRECRAWL_API_URL and not CRAWL4AI_API_URL:
-        errors.append("至少需要配置一种有效的网页爬虫服务: FireCrawl 或 Crawl4AI。")
-    elif not FIRECRAWL_API_URL:
-        warnings.append("FireCrawl 配置无效或未提供，将仅使用 Crawl4AI (如果已配置)。")
-    elif not CRAWL4AI_API_URL:
-        warnings.append("Crawl4AI 配置未提供，将仅使用 FireCrawl (如果已配置)。")
+    # 2. 网页爬虫配置校验
+    if not FIRECRAWL_API_URL and not CRAWL4AI_API_URL and not JINA_API_URL:
+        errors.append("至少需要配置一种有效的网页爬虫服务: FireCrawl 或 Crawl4AI 或 Jina")
+    if not FIRECRAWL_API_URL:
+        warnings.append("FireCrawl 配置无效或未提供")
+    if not CRAWL4AI_API_URL:
+        warnings.append("Crawl4AI 配置未提供")
+    if not JINA_API_URL:
+        warnings.append("Jina 配置未提供")
 
     # 3. 基础对话模型配置校验
     if not BASE_CHAT_API_KEY:

@@ -14,7 +14,7 @@
 *   **深度研究模式**:`deep-research`模式，通过多轮搜索、评估、信息提取和规划，实现对复杂问题的深入探索。
 *   **灵活的搜索引擎集成**: 支持配置多种搜索引擎，如 SearXNG 和 Tavily，并可在它们之间进行故障切换。
 *   **仅浏览高质量的网页**: 使用大模型评估搜索结果的价值，而不是一股脑全部塞入上下文。
-*   **高效的网页内容抓取**: 使用 FireCrawl 和 Crawl4AI 网页爬虫服务。
+*   **高效的网页内容抓取**: 使用 FireCrawl , Crawl4AI 或 Jina 网页爬虫服务。
 *   **网页内容压缩**: 使用大模型压缩网页内容，减少上下文长度,提高有效信息密度。
 *   **多个大模型协同工作**:
     *   **基础对话**: 处理用户交互和内部功能调度。
@@ -35,10 +35,11 @@
 *   **Searxng**: [自建](https://docs.searxng.org/admin/installation-docker.html) 或使用 [公共服务器](https://searx.space/)。需开启 JSON 格式支持。
 *   **Tavily**: [Tavily 官网](https://www.tavily.com/)
 
-**网页爬虫 (二选一)**:
+**网页爬虫 (三选一)**:
 
 *   **FireCrawl**: [自建](https://docs.firecrawl.dev/contributing/self-host#docker-containers-fail-to-start) 或使用 [官方 API](https://firecrawl.dev)
 *   **Crawl4AI**: [自建](https://docs.crawl4ai.com/core/docker-deployment/)
+*   **Jina**: [官方免费API](https://jina.ai/reader/) 或者 [自建](https://github.com/intergalacticalvariable/reader)
 
 **LLM**: 大模型 API 供应商
 
@@ -75,23 +76,40 @@ pip install -r requirements.txt
 #### **搜索引擎配置 (至少配置一个)**
 > 优先使用 `SearXNG`，当 `SearXNG` 请求失败时，会自动切换到 `Tavily`。
 
-*   `SEARXNG_URL`: 自建或公共 SearXNG 实例的 URL，**必须支持 JSON 格式输出**。
-*   `TAVILY_KEY`: Tavily 服务的 API 密钥。
-*   `TAVILY_MAX_NUM`: 使用 Tavily 搜索时，返回结果的最大数量 建议`20`。
-*   `SEARCH_API_LIMIT`: 限制搜索引擎 API 的并发请求数，请根据您使用的服务商限制进行设置。
+* `SEARXNG_URL`: 自建或公共 SearXNG 实例的 URL，**必须支持 JSON 格式输出**。
+
+  
+
+* `TAVILY_KEY`: Tavily 服务的 API 密钥。
+
+* `TAVILY_MAX_NUM`: 使用 Tavily 搜索时，返回结果的最大数量 建议`20`。
+
+  
+
+  > `SEARCH_API_LIMIT`: 限制搜索引擎 API 的并发请求数，请根据您使用的服务商限制进行设置。
 
 #### **网页爬虫配置 (至少配置一个)**
-> 优先使用 `FireCrawl`，当其抓取失败或内容过少时，会自动切换到 `Crawl4AI`。
+> 如果全部配置,优先级FireCrawl>Crawl4ai>Jina
 
-*   `FIRECRAWL_API_URL`: FireCrawl 服务的 URL。如果使用官方 API，此项可留空。
-*   `FIRECRAWL_API_KEY`: FireCrawl 服务的 API 密钥。本地部署时若未设置可留空，使用官方 API 则必须填写。
-*   `CRAWL4AI_API_URL`: Crawl4AI 服务的 URL。
+* `FIRECRAWL_API_URL`: FireCrawl 服务的 URL。如果使用官方 API，此项可留空。
+
+* `FIRECRAWL_API_KEY`: FireCrawl 服务的 API 密钥。本地部署时若未设置可留空，使用官方 API 则必须填写。
+
+  
+
+* `CRAWL4AI_API_URL`: Crawl4AI 服务的 URL。
+
+  
+
+* `JINA_API_URL`: Jina 服务的URL (官方提供免费版,详见 https://jina.ai/reader/ )
+
+*   `JINA_API_KEY`: Jina 服务的API 密钥
 
 #### **搜索与研究参数**
 *   `CRAWL_THREAD_NUM`: 抓取网页时的并发任务数。建议根据网络和服务器性能适当调低以提高成功率（例如，FireCrawl 官方免费版限制为 10次/分钟）。
 *   `MAX_SEARCH_RESULTS`: 普通搜索模式下，单次搜索最多处理的网页数量。
 *   `MAX_DEEPRESEARCH_RESULTS`: 深度研究模式下，每次迭代最多处理的网页数量，不建议设置过大 建议`3`。
-*   `MAX_STEPS_NUM`: 深度研究模式下的最大迭代次数 建议`12`。
+*   `MAX_STEPS_NUM`: 深度研究模式下的最大迭代次数 建议 `12`。
 
 #### **大模型 (LLM) 配置**
 
@@ -188,15 +206,16 @@ python main.py
 
 ## 🤔已知问题
 *   过早结束研究 - 发起请求时带上"详细研究"之类的关键词
-*   超时终止     - 由于研究时间过长,部分情况下,会造成客户端超时终止链接的情况,暂未有好的解决办法
+*   超时终止     - 由于研究时间过长,部分情况下,会造成客户端超时终止链接的情况,等待重构解决
 
 ## ✍️ TODO
 
 *   更加完善的项目管理
-*   并发
+*   使用asyncio重构,避免超时,增强并发能力
 *   更加优秀的架构设计(目前为顺序迭代,部分任务并不适合这个模式)
 *   智能读取网页结果中的URL
 *   追问
+
 
 ## 🤝 贡献
 
