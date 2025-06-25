@@ -84,17 +84,19 @@ def url_to_markdown(url: str) -> Optional[str]:
         return ""
     url = url.strip(' ')
     url = url.lower()
-    if url.endswith(tuple(AVAILABLE_EXTENSIONS)):
-        logger.info(f"下载文件 { url.rsplit('//')[-1] } 中...")
-        file_name = download_file(url)
-        if file_name:
-            # 如果是文件,直接提取文本
-            logger.info(f"下载文件 { url.rsplit('//')[-1] } 成功")
-            result = extract_text_from_file(file_name)            
-            return result
-        else:
-            logger.warning(f"下载文件 { url.rsplit('//')[-1] } 失败!")
-            return "提取内容失败!"
+    # Jina支持直接读取
+    if not JINA_API_URL:
+        if url.endswith(tuple(AVAILABLE_EXTENSIONS)):
+            logger.info(f"下载文件 { url.rsplit('//')[-1] } 中...")
+            file_name = download_file(url)
+            if file_name:
+                # 如果是文件,直接提取文本
+                logger.info(f"下载文件 { url.rsplit('//')[-1] } 成功")
+                result = extract_text_from_file(file_name)            
+                return result
+            else:
+                logger.warning(f"下载文件 { url.rsplit('//')[-1] } 失败!")
+                return "提取内容失败!"
 
     while attempt_count < max_attempts:
         attempt_count += 1  # 在循环开始就增加计数
