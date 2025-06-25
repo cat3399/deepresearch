@@ -120,15 +120,16 @@ def chat_completion(messages: list, chat_model=BASE_CHAT_MODEL, client=CLIENT, u
         return response
 
 def process_messages_stream(messages: list, search_mode: int = 1):
-    # 添加系统提示(如果有)
-    # messages = [{'role': 'system', 'content': SYS_PROMPT}] + messages
     assistant_rsp = chat_completion(messages, use_tools=True, stream=True)
     content_result = ' '
     tool_calls = None
-    # print(assistant_rsp)
     for chunk in assistant_rsp:
-        delta = chunk.choices[0].delta
-        # print(delta)
+        try:
+            delta = chunk.choices[0].delta
+        except Exception:
+            logger.warning(f"delta读取失败 {chunk} ")
+            delta = None
+            continue
         try:
             if delta.reasoning_content is not None:
                 yield sse_create_openai_data(reasoning_content=delta.reasoning_content)
