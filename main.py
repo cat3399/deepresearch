@@ -6,10 +6,13 @@ from app.utils.test_api import run_tests
 from config.logging_config import logger
 from config.base_config import BASE_CHAT_MODEL
 from app.api.routes import register_routes
+from webui.setting import env_editor_bp
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'https://github.com/cat3399/deepreseach'
 
 register_routes(app)
+app.register_blueprint(env_editor_bp)
 
 # 打印初始信息
 logger.info(f"基础对话使用的模型: {BASE_CHAT_MODEL}")

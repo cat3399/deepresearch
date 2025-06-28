@@ -1,0 +1,53 @@
+<!-- env_editor_ui/templates/env_editor.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>.env 文件编辑器</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .form-group { margin-bottom: 1em; }
+        label { display: block; margin-bottom: 0.5em; font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 0.5em; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .btn { background-color: #007bff; color: white; padding: 0.7em 1.5em; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
+        .btn:hover { background-color: #0056b3; }
+        .alert { padding: 1em; margin-bottom: 1em; border-radius: 4px; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>.env 文件编辑器</h1>
+        
+        <!-- 显示Flask的flash消息 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <p>在这里修改你的环境变量。修改后请点击“保存配置”。</p>
+        
+        <form action="{{ url_for('setting.save_config') }}" method="post">
+            {% if env_vars %}
+                {% for key, value in env_vars.items() %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ key }}</label>
+                    <input type="text" id="{{ key }}" name="{{ key }}" value="{{ value }}">
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>未找到任何配置项或 `.env` 文件为空。</p>
+            {% endif %}
+
+            <button type="submit" class="btn">保存配置</button>
+        </form>
+    </div>
+</body>
+</html>
