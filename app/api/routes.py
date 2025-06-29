@@ -8,6 +8,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
+from app.api.sse_add_heartbeat import process_messages_stream_heartbeat
 from app.utils.prompt import SYS_PROMPT
 from app.utils.tools import get_time
 from app.chat.functions import process_messages,process_messages_stream
@@ -35,7 +36,7 @@ def register_routes(app):
         # 检查 stream 参数
         STREAM_MODE = data.get("stream", False)
         if STREAM_MODE:
-            rsp_stream = process_messages_stream(messages,search_mode=search_mode)
+            rsp_stream = process_messages_stream_heartbeat(messages,search_mode=search_mode)
             return Response(stream_with_context(rsp_stream), mimetype='text/event-stream', headers={
                 'Cache-Control': 'no-cache'
             })

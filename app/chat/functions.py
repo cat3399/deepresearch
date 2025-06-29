@@ -193,6 +193,7 @@ def process_messages_stream(messages: list, search_mode: int = 1):
         # assistant_message = {'role': 'assistant', 'content': assistant_rsp.content}
         # messages.append(assistant_message)
         yield sse_create_openai_data(content=content_result)
+    yield "data: [DONE]\n\n"
 
 def process_messages(messages: list, stream: bool = False, search_mode: int = 1):
     logger.info("非流模式")
