@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
 import time
-from flask import request, jsonify, make_response, Response, stream_with_context
+from flask import redirect, request, jsonify, make_response, Response, stream_with_context
 
 # 将项目根目录添加到sys.path
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -17,6 +17,9 @@ from config.base_config import SUMMARY_MODEL,API_KEY
 SHOW_MODEL = "search-llm"
 
 def register_routes(app):
+    @app.route("/", methods=["GET"])
+    def index():
+        return redirect("/setting")
     @app.route("/v1/chat/completions", methods=["POST"])
     def chat_completions_api():
         search_mode = 1
