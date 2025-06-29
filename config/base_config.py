@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import random
 from dotenv import load_dotenv
@@ -15,6 +16,15 @@ env_path = ROOT_DIR.joinpath(".env")
 if os.path.exists(env_path):
     load_dotenv(env_path)
     logger.info("环境变量文件已加载")
+else:
+    template_path = ROOT_DIR.joinpath(".env.template")
+    if os.path.exists(template_path):
+        shutil.copy(template_path, env_path)
+        load_dotenv(env_path)
+        logger.info("未找到.env文件，已从模板复制一份")
+    else:
+        logger.error("未找到.env文件，也没有找到模板文件")
+
 
 def get_random_api_key(api_key_str):
     """从逗号分隔的API密钥字符串中随机选择一个
