@@ -28,4 +28,5 @@ if __name__ == "__main__":
         # 如果没有 'test' 参数，正常启动服务
         logger.info("如果你不知道API是否填写正确,可执行 python main.py --test进行测试")
         logger.info("启动服务中.....")
+        logger.info("可进入 http://0.0.0.0:5000/setting 配置环境变量文件")
         serve(app, host="0.0.0.0", port=5000, threads=8)
