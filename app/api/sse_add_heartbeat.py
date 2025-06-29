@@ -11,6 +11,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from app.chat.functions import process_messages_stream
 from config.logging_config import logger
+from config.base_config import HEARTBEAT_TIMEOUT
 
 def add_work(gen:Generator,q:Queue):
     try:
@@ -29,7 +30,7 @@ def process_messages_stream_heartbeat(messages,search_mode):
     t.start()
     while True:
         try:
-            data = data_queue.get(timeout=10)
+            data = data_queue.get(timeout=HEARTBEAT_TIMEOUT)
             if data == "no data":
                 break
             

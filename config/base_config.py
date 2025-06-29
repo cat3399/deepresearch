@@ -127,6 +127,10 @@ SUMMARY_API_URL = os.getenv("SUMMARY_API_URL", BASE_CHAT_API_URL)
 SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", BASE_CHAT_MODEL)
 
 AVAILABLE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls']
+
+# 杂项
+HEARTBEAT_TIMEOUT = int(os.getenv("HEARTBEAT_TIMEOUT",25))
+
 #############################################
 # 配置校验
 #############################################
