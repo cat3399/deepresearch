@@ -111,7 +111,7 @@ def url_to_markdown(url: str) -> Optional[str]:
                     elif result and len(result) > len(best_result):
                         best_result = result
                 except Exception as e:
-                    logger.error(f"Firecrawl抓取失败: {str(e)}")
+                    logger.error(f"Firecrawl抓取{url}失败: {str(e)}")
 
             # crawl4ai 
             if CRAWL4AI_API_URL:
@@ -124,7 +124,7 @@ def url_to_markdown(url: str) -> Optional[str]:
                         best_result = result
                         logger.info('保存crawl4ai结果,继续尝试获取更好结果')
                 except Exception as e:
-                    logger.error(f"Crawl4ai抓取失败: {str(e)}")
+                    logger.error(f"Crawl4ai抓取{url}失败: {str(e)}")
 
             # jina
             if JINA_API_URL:
@@ -137,7 +137,7 @@ def url_to_markdown(url: str) -> Optional[str]:
                         best_result = result
                         logger.info('保存Jina结果,继续尝试获取更好结果')
                 except Exception as e:
-                    logger.error(f"Jina抓取失败: {str(e)}")
+                    logger.error(f"Jina抓取{url}失败: {str(e)}")
 
             if attempt_count < max_attempts:
                 logger.info(f"抓取过程出现问题,第 {attempt_count+1} 次尝试抓取...")
