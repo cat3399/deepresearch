@@ -122,6 +122,7 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
             
             try:
                 # 获取token消耗信息
+                logger.info(f"使用模型 {COMPRESS_MODEL}")
                 if response_json and "usageMetadata" in response_json:
                     usage = response_json["usageMetadata"]
                     if "totalTokenCount" in usage:
