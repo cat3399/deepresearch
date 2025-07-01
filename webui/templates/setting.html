@@ -1,29 +1,189 @@
-<!-- env_editor_ui/templates/env_editor.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>.env 文件编辑器</title>
+    <!-- 引入 Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
-        .form-group { margin-bottom: 1em; }
-        label { display: block; margin-bottom: 0.5em; font-weight: bold; }
-        input[type="text"] { width: 100%; padding: 0.5em; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        .btn { background-color: #007bff; color: white; padding: 0.7em 1.5em; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
-        .btn:hover { background-color: #0056b3; }
-        .alert { padding: 1em; margin-bottom: 1em; border-radius: 4px; }
-        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        :root {
+            --primary-color: #007bff;
+            --primary-hover-color: #0056b3;
+            --background-color: #f8f9fa;
+            --card-background-color: #ffffff;
+            --text-color: #333;
+            --label-color: #212529;
+            --border-color: #dee2e6;
+            --help-text-color: #6c757d;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --success-border: #c3e6cb;
+            --warning-bg: #fff3cd;
+            --warning-text: #856404;
+            --warning-border: #ffeeba;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 2em;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 {
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 1.5em;
+        }
+        .alert {
+            padding: 1em;
+            margin-bottom: 1em;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+        }
+        .alert::before {
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-right: 10px;
+        }
+        .alert-success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border-color: var(--success-border);
+        }
+        .alert-success::before { content: "\f058"; }
+        .alert-warning {
+            background-color: var(--warning-bg);
+            color: var(--warning-text);
+            border-color: var(--warning-border);
+        }
+        .alert-warning::before { content: "\f071"; }
+
+        .accordion .card {
+            background-color: var(--card-background-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .accordion .card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        }
+        .card-header {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .card-header:hover {
+            background-color: #f1f3f5;
+        }
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--label-color);
+        }
+        .card-header .icon {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        .card-header .accordion-icon {
+            transition: transform 0.3s ease-in-out;
+        }
+        .card.active .accordion-icon {
+            transform: rotate(90deg);
+        }
+        .card-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+            padding: 0 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .card.active .card-body {
+            max-height: 5000px; /* 足够大的值 */
+            padding: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            color: var(--label-color);
+        }
+        .input-wrapper {
+            position: relative;
+        }
+        input[type="text"], input[type="password"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 0.75em;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #fff;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        .help-text {
+            font-size: 0.9em;
+            color: var(--help-text-color);
+            margin-top: 0.5em;
+        }
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+        }
+        .btn-container {
+            text-align: right;
+            margin-top: 2rem;
+        }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8em 2em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: var(--primary-hover-color);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>.env 文件编辑器</h1>
+        <h1><i class="fas fa-cogs"></i> 项目配置中心</h1>
         
-        <!-- 显示Flask的flash消息 -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -32,22 +192,117 @@
             {% endif %}
         {% endwith %}
 
-        <p>在这里修改你的环境变量。修改后请点击“保存配置”。</p>
-        
         <form action="{{ url_for('setting.save_config') }}" method="post">
-            {% if env_vars %}
-                {% for key, value in env_vars.items() %}
-                <div class="form-group">
-                    <label for="{{ key }}">{{ key }}</label>
-                    <input type="text" id="{{ key }}" name="{{ key }}" value="{{ value }}">
+            <div class="accordion">
+            {% if config_data %}
+                {% for section in config_data %}
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <i class="fas {{ section.icon | default('fa-sliders-h') }} icon"></i>
+                            <h2>{{ section.title }}</h2>
+                        </div>
+                        <i class="fas fa-chevron-right accordion-icon"></i>
+                    </div>
+                    <div class="card-body">
+                        {% for var in section.vars %}
+                        <div class="form-group">
+                            <label for="{{ var.key }}">{{ var.key }}</label>
+                            <div class="input-wrapper">
+                                
+                                <!-- 智能控件渲染逻辑 -->
+                                {% if var.type == 'select' %}
+                                    <select id="{{ var.key }}" name="{{ var.key }}">
+                                        {% for option in var.options %}
+                                            <option value="{{ option }}" {% if option == var.value %}selected{% endif %}>
+                                                {{ option or var.placeholder or '默认' }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif var.type == 'textarea' %}
+                                    <textarea id="{{ var.key }}" name="{{ var.key }}" placeholder="{{ var.placeholder }}">{{ var.value }}</textarea>
+                                {% elif var.type == 'password' %}
+                                    <input type="password" id="{{ var.key }}" name="{{ var.key }}" value="{{ var.value }}" placeholder="{{ var.placeholder }}">
+                                    <i class="fas fa-eye toggle-password"></i>
+                                {% elif var.type == 'number' %}
+                                    <input type="number" id="{{ var.key }}" name="{{ var.key }}" value="{{ var.value }}" 
+                                           placeholder="{{ var.placeholder }}"
+                                           {% if var.min is not none %}min="{{ var.min }}"{% endif %}
+                                           {% if var.max is not none %}max="{{ var.max }}"{% endif %}>
+                                {% else %} {# 默认为 text 类型 #}
+                                    <input type="text" id="{{ var.key }}" name="{{ var.key }}" value="{{ var.value }}" placeholder="{{ var.placeholder }}">
+                                {% endif %}
+
+                            </div>
+                            {% if var.comment %}
+                            <p class="help-text">{{ var.comment }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% endfor %}
             {% else %}
                 <p>未找到任何配置项或 `.env` 文件为空。</p>
             {% endif %}
+            </div>
 
-            <button type="submit" class="btn">保存配置</button>
+            <div class="btn-container">
+                <button type="submit" class="btn">保存全部配置</button>
+            </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const accordionHeaders = document.querySelectorAll('.card-header');
+            
+            // 默认展开第一个面板
+            if (accordionHeaders.length > 0) {
+                const firstCard = accordionHeaders[0].parentElement;
+                const firstCardBody = accordionHeaders[0].nextElementSibling;
+                firstCard.classList.add('active');
+                firstCardBody.style.maxHeight = firstCardBody.scrollHeight + "px";
+            }
+
+            // Accordion (折叠面板) 逻辑
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const card = header.parentElement;
+                    const cardBody = header.nextElementSibling;
+                    
+                    const isActive = card.classList.contains('active');
+
+                    // 可选：关闭其他所有打开的面板
+                    // document.querySelectorAll('.card.active').forEach(activeCard => {
+                    //     if (activeCard !== card) {
+                    //         activeCard.classList.remove('active');
+                    //         activeCard.querySelector('.card-body').style.maxHeight = '0';
+                    //     }
+                    // });
+
+                    card.classList.toggle('active', !isActive);
+
+                    if (!isActive) {
+                        cardBody.style.maxHeight = cardBody.scrollHeight + "px";
+                    } else {
+                        cardBody.style.maxHeight = '0';
+                    }
+                });
+            });
+
+            // 密码可见性切换逻辑
+            const passwordToggles = document.querySelectorAll('.toggle-password');
+            passwordToggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const input = toggle.previousElementSibling;
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    toggle.classList.toggle('fa-eye');
+                    toggle.classList.toggle('fa-eye-slash');
+                });
+            });
+        });
+    </script>
 </body>
 </html>
