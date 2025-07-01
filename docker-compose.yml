@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  deepresearch:
+    container_name: deepresearch
+    image: cat3399/deepresearch:lates
+    ports:
+      - "5000:5000"
+    # volumes:
+    #   - ./.env:/app/.env # 使用本地环境变量配置文件
