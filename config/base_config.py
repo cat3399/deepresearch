@@ -7,7 +7,6 @@ from pathlib import Path
 
 # 将项目根目录添加到sys.path
 ROOT_DIR = Path(__file__).resolve().parent.parent
-    
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 from config.logging_config import logger
@@ -47,6 +46,9 @@ def get_random_api_key(api_key_str):
         logger.info(f"从 {len(keys)} 个API密钥中随机选择了一个")
     
     return selected_key
+
+# 首先加载所有环境变量
+# ... (此处省略了其他非模型变量的加载，它们保持不变) ...
 
 API_KEY = os.getenv("API_KEY", "sk-1")
 
@@ -100,9 +102,11 @@ CRAWL_THREAD_NUM = int(os.getenv("CRAWL_THREAD_NUM", "5"))
 MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS", "6"))
 MAX_DEEPRESEARCH_RESULTS = int(os.getenv("MAX_DEEPRESEARCH_RESULTS","3"))
 MAX_STEPS_NUM = int(os.getenv("MAX_STEPS_NUM", "12"))
+
 #############################################
 # 模型配置
 #############################################
+
 # 基础对话模型配置（需要支持function calling）
 BASE_CHAT_API_KEY = get_random_api_key(os.getenv("BASE_CHAT_API_KEY"))
 BASE_CHAT_API_URL = os.getenv("BASE_CHAT_API_URL")
@@ -125,7 +129,7 @@ COMPRESS_API_TYPE = os.getenv("COMPRESS_API_TYPE")
 if COMPRESS_API_TYPE:
     COMPRESS_API_TYPE = COMPRESS_API_TYPE.upper()
 COMPRESS_API_KEY = get_random_api_key(os.getenv("COMPRESS_API_KEY"))
-COMPRESS_API_URL = os.getenv("COMPRESS_API_URL")
+COMPRESS_API_URL = os.getenv("COMPRESS_API_URL","https://generativelanguage.googleapis.com")
 COMPRESS_MODEL = os.getenv("COMPRESS_MODEL")
 
 # 最后总结搜索结果的模型配置（留空表示和基础对话模型相同）
@@ -136,9 +140,57 @@ SUMMARY_API_KEY = get_random_api_key(os.getenv("SUMMARY_API_KEY", os.getenv("BAS
 SUMMARY_API_URL = os.getenv("SUMMARY_API_URL", BASE_CHAT_API_URL)
 SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", BASE_CHAT_MODEL)
 
-AVAILABLE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls']
+# --- 智能默认值逻辑开始 ---
+# 2. 如果设置了 ALL_IN_GEMINI_KEY，则为未设置的选项提供默认值
+ALL_IN_GEMINI_KEY = os.getenv("ALL_IN_GEMINI_KEY")
+if ALL_IN_GEMINI_KEY:
+    logger.info("检测到 ALL_IN_GEMINI_KEY，将为未配置的模型选项提供Gemini默认值。")
+    gemini_key_str = os.getenv("ALL_IN_GEMINI_KEY")
 
-# 杂项
+    # 定义Gemini默认值
+    # OpenAI兼容格式
+    openai_compatible_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    model_pro_openai = "models/gemini-2.5-pro"
+    model_flash_openai = "models/gemini-2.5-flash"
+    
+    # 原生Gemini格式
+    native_gemini_url = "https://generativelanguage.googleapis.com"
+    model_flash_native = "gemini-2.5-flash-lite-preview-06-17"
+    native_gemini_type = "GEMINI"
+
+    # --- 为每个模型组按需应用默认值 ---
+    
+    # 基础与关键词模型 (Pro)
+    if not BASE_CHAT_API_KEY: BASE_CHAT_API_KEY = get_random_api_key(gemini_key_str)
+    if not BASE_CHAT_API_URL: BASE_CHAT_API_URL = openai_compatible_url
+    if not BASE_CHAT_MODEL: BASE_CHAT_MODEL = model_pro_openai
+    # 由于关键词模型默认跟随基础模型，只需确保基础模型有值即可
+    if not SEARCH_KEYWORD_API_KEY: SEARCH_KEYWORD_API_KEY = BASE_CHAT_API_KEY
+    if not SEARCH_KEYWORD_API_URL: SEARCH_KEYWORD_API_URL = BASE_CHAT_API_URL
+    if not SEARCH_KEYWORD_MODEL: SEARCH_KEYWORD_MODEL = BASE_CHAT_MODEL
+
+    # 评估模型 (Flash, OpenAI兼容接口)
+    if not EVALUATE_API_KEY: EVALUATE_API_KEY = get_random_api_key(gemini_key_str)
+    if not EVALUATE_API_URL: EVALUATE_API_URL = openai_compatible_url
+    if not EVALUATE_MODEL: EVALUATE_MODEL = model_flash_openai
+
+    # 压缩模型 (Flash, 原生接口)
+    if not COMPRESS_API_KEY: COMPRESS_API_KEY = get_random_api_key(gemini_key_str)
+    if not COMPRESS_API_URL: COMPRESS_API_URL = native_gemini_url
+    if not COMPRESS_MODEL: COMPRESS_MODEL = model_flash_native
+    if not COMPRESS_API_TYPE: COMPRESS_API_TYPE = native_gemini_type
+
+    # 总结模型 (Pro)
+    if not SUMMARY_API_KEY: SUMMARY_API_KEY = get_random_api_key(gemini_key_str)
+    if not SUMMARY_API_URL: SUMMARY_API_URL = openai_compatible_url
+    if not SUMMARY_MODEL: SUMMARY_MODEL = model_pro_openai
+    if not SUMMARY_API_TYPE: SUMMARY_API_TYPE = "OPENAI" # OpenAI兼容接口的类型
+
+    logger.info("All-in-Gemini 默认值已应用。在 .env 中明确设置的选项已被保留。")
+# --- 智能默认值逻辑结束 ---
+
+
+AVAILABLE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls']
 HEARTBEAT_TIMEOUT = int(os.getenv("HEARTBEAT_TIMEOUT",25))
 
 #############################################
@@ -180,6 +232,9 @@ def validate_config():
     def get_fallback_details(prefix, suffixes):
         details = []
         all_fallback_to_base = True
+        # 如果ALL_IN_GEMINI_KEY存在，则不检查回退，因为默认值已经填充
+        if ALL_IN_GEMINI_KEY:
+            return [], False
         for suffix in suffixes:
             if os.getenv(f"{prefix}{suffix}") is None:
                 details.append(suffix)
@@ -211,21 +266,18 @@ def validate_config():
 
     # 7. 总结搜索结果模型配置校验
     summary_fallback_details, summary_all_fallback = get_fallback_details("SUMMARY_", ["API_KEY", "API_URL", "MODEL"])
-    summary_api_type_env = os.getenv("SUMMARY_API_TYPE") # SUMMARY_API_TYPE 没有回退到BASE_CHAT的逻辑
+    summary_api_type_env = os.getenv("SUMMARY_API_TYPE")
 
     if summary_all_fallback and summary_api_type_env is None:
         warnings.append("总结搜索结果模型配置未在.env中独立设置，将完全使用基础对话模型配置 (且API类型未指定)。")
-    elif summary_fallback_details: # 部分核心配置回退
+    elif summary_fallback_details:
         msg = f"总结搜索结果模型的核心配置不完整，以下部分将使用基础对话模型配置: {', '.join(summary_fallback_details)}。"
         if summary_api_type_env is None and not summary_all_fallback: 
-            # 意味着 SUMMARY_API_KEY/URL/MODEL 中至少有一个是独立设置的，但 TYPE 未设置
             msg += " 此外，SUMMARY_API_TYPE 未设置。"
         warnings.append(msg)
     elif not summary_all_fallback and summary_api_type_env is None: 
-        # 意味着 SUMMARY_API_KEY, URL, MODEL 都独立设置了，但 TYPE 未设置
         warnings.append("总结搜索结果模型已配置API_KEY/URL/MODEL，但 SUMMARY_API_TYPE 未设置。")
     
-    # 输出校验结果
     if errors:
         logger.error("\n====== 配置错误 ======")
         for error in errors:
@@ -242,5 +294,4 @@ def validate_config():
     
     return True
 
-# 检查配置项完整性
 CONFIG_VALID = validate_config()
