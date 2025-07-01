@@ -28,29 +28,63 @@
 
 ![系统架构图](img/系统架构图.png)
 
-## 🧩 外部服务依赖
-
-**搜索引擎 API (二选一)**:
-
-*   **Searxng**: [自建](https://docs.searxng.org/admin/installation-docker.html) 或使用 [公共服务器](https://searx.space/)。需开启 JSON 格式支持。
-*   **Tavily**: [Tavily 官网](https://www.tavily.com/)
-
-**网页爬虫 (三选一)**:
-
-*   **FireCrawl**: [自建](https://docs.firecrawl.dev/contributing/self-host#docker-containers-fail-to-start) 或使用 [官方 API](https://firecrawl.dev)
-*   **Crawl4AI**: [自建](https://docs.crawl4ai.com/core/docker-deployment/)
-*   **Jina**: [官方免费API](https://jina.ai/reader/) 或者 [自建](https://github.com/intergalacticalvariable/reader)
-
-**LLM**: 大模型 API 供应商
-
 ## 🚀 快速开始
 
-### 1. 环境准备
+我们提供两种部署方式：使用 Docker（推荐）或直接在本地环境运行。
+
+### **方法一：使用 Docker (推荐)**
+
+这是最简单、最推荐的部署方式，无需手动管理 Python 环境和依赖。项目根目录已提供 `Dockerfile` 和 `docker-compose.yml` 文件。
+
+#### 启动服务
+
+您可以选择使用 Docker Compose 或 Docker CLI 来启动服务。
+
+**A. 使用 Docker Compose (推荐)**
+
+项目根目录已包含 `docker-compose.yml` 文件，内容如下：
+
+```yaml
+version: '3'
+
+services:
+  deepresearch:
+    container_name: deepresearch
+    image: cat3399/deepresearch:latest
+    ports:
+      - "5000:5000"
+    # volumes:
+    #   - ./.env:/app/.env # 如果您想使用本地的 .env 文件，请取消此行的注释
+```
+
+在项目根目录下运行以下命令即可启动服务：
+
+```bash
+docker-compose up -d
+```
+> **注意**：`docker-compose.yml` 文件中的 `volumes` 部分默认被注释。如果您希望将本地的 `.env` 文件直接映射到容器中（推荐做法），请**取消该行的注释**后再运行
+
+**B. 使用 Docker CLI**
+
+如果您不使用 Docker Compose，也可以使用以下命令直接运行 Docker 容器：
+
+```bash
+docker run -d --name deepresearch -p 5000:5000 cat3399/deepresearch:latest
+```
+
+#### **3. 访问服务**
+服务启动后，即可通过 `http://127.0.0.1:5000` 访问 API 服务，或通过 `http://127.0.0.1:5000/setting` 访问可视化配置页面。
+
+---
+
+### **方法二：本地部署**
+
+#### **1. 环境准备**
 
 *   确保您已安装 Python 3.8+
 *   建议使用 `uv` 或 `venv` 等虚拟环境。
 
-### 2. 安装依赖
+#### **2. 安装依赖**
 
 克隆本仓库到本地后，在项目根目录下运行：
 
@@ -58,9 +92,28 @@
 pip install -r requirements.txt
 ```
 
-### 3. 配置环境变量
+#### **3. 配置环境变量**
 
-*   复制 `.env.template` 文件并重命名为 `.env`。
+> 可使用浏览器访问`http://127.0.0.1:5000/setting`进入配置文件的webui,进行可视化的配置
+
+**A. 快速上手 (仅使用 Gemini)**
+
+这是最简单的配置方式，如果您只想使用 Gemini API，请采用此方法。
+
+*   复制 `.env.template` 文件并重命名为 `.env`
+```bash
+cp .env.template .env
+```
+*   **唯一步骤**: 只需在配置文件中填入 `ALL_IN_GEMINI_KEY` 即可。
+*   **多 Key 支持**: 您可以填入多个 Gemini API Key，并用英文逗号 `,` 分隔。
+>此配置基础与总结模型使用2.5pro,评估使用2.5flash 压缩使用 2.5flash lite 具体模型配置优先级高于此默认值
+---
+
+**B. 完整配置 (适用于所有模型)**
+*   复制 `.env.template` 文件并重命名为 `.env`
+```bash
+cp .env.template .env
+```
 *   根据您的实际情况，在 `.env` 文件中填写必要的 API 密钥和 URL。
 
 > **通用说明**:
@@ -73,10 +126,10 @@ pip install -r requirements.txt
 #### **基础配置**
 *   `API_KEY`: 访问本项目 API 服务时所需的授权密钥。
 
-#### **搜索引擎配置 (至少配置一个)**
+#### **搜索引擎配置**
 > 优先使用 `SearXNG`，当 `SearXNG` 请求失败时，会自动切换到 `Tavily`。
 
-* `SEARXNG_URL`: 自建或公共 SearXNG 实例的 URL，**必须支持 JSON 格式输出**。
+* `SEARXNG_URL`: 自建 或 公共 SearXNG 实例，**必须支持 JSON 格式输出**。 
 
   
 
@@ -140,7 +193,7 @@ pip install -r requirements.txt
     
     *   `SUMMARY_API_TYPE`, `SUMMARY_API_KEY`, `SUMMARY_API_URL`, `SUMMARY_MODEL`
 
-### 4. 运行服务
+#### **4. 运行服务**
 
 一键测试所有API是否正常
 ```
@@ -154,6 +207,21 @@ python main.py
 ```
 
 服务默认启动在 `http://0.0.0.0:5000`。
+
+## 🧩 外部服务依赖
+
+**搜索引擎 API (二选一)**:
+
+*   **Searxng**: [自建](https://docs.searxng.org/admin/installation-docker.html) 或使用 [公共服务器](https://searx.space/)。需开启 JSON 格式支持。
+*   **Tavily**: [Tavily 官网](https://www.tavily.com/)
+
+**网页爬虫 (三选一)**:
+
+*   **FireCrawl**: [自建](https://docs.firecrawl.dev/contributing/self-host#docker-containers-fail-to-start) 或使用 [官方 API](https://firecrawl.dev)
+*   **Crawl4AI**: [自建](https://docs.crawl4ai.com/core/docker-deployment/)
+*   **Jina**: [官方免费API](https://jina.ai/reader/) 或者 [自建](https://github.com/intergalacticalvariable/reader)
+
+**LLM**: 大模型 API 供应商
 
 ## 🛠️ API 使用示例
 
