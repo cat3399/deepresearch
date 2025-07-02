@@ -14,6 +14,7 @@ COPY --from=builder /opt/venv /opt/venv
 
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 RUN chown -R appuser:appuser /app
+RUN cp .env.template .env
 USER appuser
 
 ENV PATH="/opt/venv/bin:$PATH"
