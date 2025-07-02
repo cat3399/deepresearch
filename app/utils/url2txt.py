@@ -56,15 +56,13 @@ def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
     return result_makrdown
 
 def by_jina(url: str, server_url: str = JINA_API_URL) -> str:
-    payload = {
-        "url": url,
-    }
+    crawl_url = server_url + "/" + url
     headers = {
-        "Content-Type": "application/json",
+        "X-Respond-With": "markdown",
     }
     if JINA_API_KEY:
         headers["Authorization"] = f"Bearer {JINA_API_KEY}"
-    response = requests.post(server_url, json=payload, headers=headers, timeout=30)
+    response = requests.get(crawl_url, headers=headers, timeout=40)
     response.raise_for_status()
     return response.text
 
