@@ -13,6 +13,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.utils.tools import sse_create_openai_data, get_time
+from app.utils.i18n import i18n
 from app.utils.url2txt import url_to_markdown
 from config.base_config import BASE_CHAT_API_KEY, BASE_CHAT_API_URL, BASE_CHAT_MODEL
 from config.logging_config import logger
@@ -178,7 +179,7 @@ def process_messages_stream(messages: list, search_mode: int = 1):
             if function_name == 'get_url_content':
                 json_args = json.loads(function_args)
                 for url in json_args['urls']:
-                    yield sse_create_openai_data(reasoning_content=f"我正在获取 {url} 网页的内容\n")
+                    yield sse_create_openai_data(reasoning_content=i18n('fetching_url', url=url))
                 function_output = registry.call(function_name, function_args)
                 messages[-1]['content'] = messages[-1]['content'] + f"现在的时间是{get_time()} 这是网页的内容 \n {function_output[:40000:]}"
 

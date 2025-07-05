@@ -13,6 +13,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.utils.tools import sse_create_openai_data, sse_gemini2openai_data
+from app.utils.i18n import i18n
 from config.base_config import SUMMARY_API_KEY,SUMMARY_API_URL,SUMMARY_MODEL,SUMMARY_API_TYPE
 from config.logging_config import logger
 
@@ -53,7 +54,7 @@ def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
             if retry_count >= MAX_RETRIES:
                 logger.error(f"json_data: {completion.model_dump_json()}")
                 logger.error(f"{model}请求失败: {str(e)}")
-                return "请求失败"
+                return i18n('request_failed')
             else:
                 logger.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
 
@@ -95,7 +96,7 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
             retry_count += 1
             if retry_count >= MAX_RETRIES:
                 logger.error(f"{model}请求失败: {str(e)}")
-                yield "请求失败"
+                yield i18n('request_failed')
                 return
             else:
                 logger.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")

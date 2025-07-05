@@ -17,10 +17,18 @@ from app.search.models import SearchRequest, SearchResult, SearchResults
 from app.search.search_after_ai import deepscan, is_duplicate
 from app.search.search_searxng_api import search_api_worker
 from app.utils.black_url import URL_BLACKLIST
-from config.base_config import (SEARCH_API_LIMIT,MAX_DEEPRESEARCH_RESULTS,MAX_STEPS_NUM,
-                              SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL,SEARCH_KEYWORD_MODEL,
-                              EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL,
-                              )
+from config.base_config import (
+    SEARCH_API_LIMIT,
+    MAX_DEEPRESEARCH_RESULTS,
+    MAX_STEPS_NUM,
+    SEARCH_KEYWORD_API_KEY,
+    SEARCH_KEYWORD_API_URL,
+    SEARCH_KEYWORD_MODEL,
+    EVALUATE_API_KEY,
+    EVALUATE_API_URL,
+    EVALUATE_MODEL,
+)
+from app.utils.i18n import i18n
 from config.logging_config import logger
 from app.utils.prompt import (DEEPRESEARCH_FIRST_PROMPT,
                               DEEPRESEARCH_NEXT_PROMPT, GET_VALUE_URL_PROMPT)
@@ -256,23 +264,23 @@ def deepresearch_tool(messages: list[dict]):
     executed_search_plans = []
     max_plan_iterations = MAX_STEPS_NUM
     accumulated_search_results = SearchResults()
-    yield "🔍 **开始深度研究搜索...**\n\n"
+    yield i18n('start_deep_research')
 
     # 执行初始搜索获取参考信息
-    yield "📋 **初始搜索获取参考信息**\n"
+    yield i18n('initial_search')
     search_reference_results = search_core(messages=str(messages), deep=False)
-    yield "✅ 初始搜索完成\n\n"
+    yield i18n('initial_done')
 
     # 生成第一个搜索计划
-    yield "📌 **生成第一个搜索计划**\n"
+    yield i18n('generate_first_plan')
     current_search_plan_steps = generate_search_plan(
         messages=messages,
         web_reference=search_reference_results.to_str() if search_reference_results else ""
     )
     
     if not current_search_plan_steps:
-        yield "⚠️ 第一个搜索计划未能生成。\n\n"
-        yield "🏁 **深度研究结束**\n\n"
+        yield i18n('first_plan_fail')
+        yield i18n('deep_end')
         yield f"results{accumulated_search_results.to_str()}"
         return
 
@@ -281,23 +289,23 @@ def deepresearch_tool(messages: list[dict]):
     yield from format_search_plan(executed_plan_item)
     
     # 执行第一个搜索计划
-    yield "🔄 **执行第一个搜索计划**\n"
+    yield i18n('exec_first_plan')
     current_results = _execute_search_plan(executed_plan_item)
     logger.debug(f"当前搜索结果: {current_results.to_str()}")
     yield from format_urls(current_results.get_urls())
     executed_search_plans.append(executed_plan_item)
     accumulated_search_results.merge(current_results)
     excluded_urls = accumulated_search_results.get_urls()
-    yield "✅ 搜索计划1执行完成\n\n"
+    yield i18n('plan_exec_done', num=1)
 
     plan_counter = 2
     
     # 继续生成和执行后续搜索计划
     try:
         while len(executed_search_plans) < max_plan_iterations:
-            yield f"📊 **已执行的搜索计划数量：** {len(executed_search_plans)}/{max_plan_iterations}\n"
+            yield i18n('plans_executed', num=len(executed_search_plans), max=max_plan_iterations)
             # 生成下一个搜索计划
-            yield f"📌 **步骤{plan_counter}：生成下一个搜索计划**\n"
+            yield i18n('next_plan', num=plan_counter)
             current_search_plan_steps = generate_search_plan(
                 messages=messages,
                 previous_plan=str([plan.get("search_purpose",'') for plan in executed_search_plans]),
@@ -306,7 +314,7 @@ def deepresearch_tool(messages: list[dict]):
             )
 
             if not current_search_plan_steps or len(current_search_plan_steps) == 0:
-                yield "🏁 **未能生成新的搜索计划，信息获取完毕，深度研究提前完成**\n\n"
+                yield i18n('no_new_plan')
                 break
 
             # 显示搜索计划
@@ -314,27 +322,27 @@ def deepresearch_tool(messages: list[dict]):
             yield from format_search_plan(executed_plan_item)
             
             # 执行搜索计划
-            yield f"🔄 **执行搜索计划{plan_counter}**\n"
+            yield i18n('exec_plan', num=plan_counter)
             current_results = _execute_search_plan(executed_plan_item,excluded_urls=excluded_urls)
             yield from format_urls(current_results.get_urls())
             accumulated_search_results.merge(current_results)
             excluded_urls += accumulated_search_results.get_urls()
             executed_search_plans.append(executed_plan_item)
-            yield f"✅ 搜索计划{plan_counter}执行完成\n\n"
+            yield i18n('plan_exec_done', num=plan_counter)
             plan_counter += 1
 
         # 处理循环结束后的情况
         if len(executed_search_plans) >= max_plan_iterations:
-            yield f"🏁 **已达到最大搜索计划数量({max_plan_iterations})，深度研究完成**\n\n"
+            yield i18n('no_new_plan')  # reuse as finish message when max reached
         elif not executed_search_plans:
-            yield "🏁 **未能执行任何搜索计划，深度研究结束**\n\n"
+            yield i18n('no_plan_executed')
         else:
-            yield "🏁 **深度研究完成**\n\n"
+            yield i18n('deep_finished')
 
-        yield "✅ **深度研究搜索完成**\n"
+        yield i18n('deep_search_done')
     except:
         traceback.print_exc()
-        yield "🚫 **研究过程出现意外,强行终止**"
+        yield i18n('deep_error')
     
     # 将结果写入文件
     # try:

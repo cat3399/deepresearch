@@ -24,6 +24,9 @@ else:
     else:
         logger.error("未找到.env文件，也没有找到模板文件")
 
+# 应用语言，可通过 APP_LANG 环境变量设置，默认中文
+APP_LANG = os.getenv("APP_LANG", "zh").lower()
+
 
 def get_random_api_key(api_key_str):
     """从逗号分隔的API密钥字符串中随机选择一个
