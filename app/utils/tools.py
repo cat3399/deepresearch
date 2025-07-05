@@ -25,9 +25,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from app.search.models import SearchRequest,QueryKeys
+from app.search.models import SearchRequest, QueryKeys
 from config.base_config import AVAILABLE_EXTENSIONS
 from config.logging_config import logger
+from app.utils.i18n import i18n
 
 def response2json(text: str, mode: str = "json_str") -> Union[Dict, List, None]:
     """
@@ -263,9 +264,9 @@ def format_search_plan(plan_info: dict):
     search_restrictions = plan_info.get('search_restrictions', '无')
     search_keywords = [item.get('keys', '') for item in plan_info.get('data', [])]
     
-    yield f"🎯 **搜索预期：** {search_purpose}\n"
-    yield f"⭕ **结果限制：** {search_restrictions}\n"
-    yield f"🔍 **搜索关键词：**\n"
+    yield i18n('search_purpose', text=search_purpose)
+    yield i18n('search_restrictions', text=search_restrictions)
+    yield i18n('search_keywords')
     
     for keyword in search_keywords:
         yield f"\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0➤ {keyword}\n"
@@ -275,10 +276,10 @@ def format_urls(urls: List[str]):
     美化URL列表输出的生成器函数
     """
     if not urls:
-        yield "📝 **未查看任何网页内容**\n"
+        yield i18n('no_urls')
         return
     
-    yield f"🌐 **已查看 {len(urls)} 个网页：**\n"
+    yield i18n('viewed_urls', num=len(urls))
     
     for i, url in enumerate(urls, 1):
         if url:

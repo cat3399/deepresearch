@@ -11,6 +11,7 @@ if str(ROOT_DIR) not in sys.path:
 from config.base_config import SEARCH_KEYWORD_MODEL, SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL
 from config.logging_config import logger
 from app.utils.tools import format_urls, response2json, get_time, json2SearchRequests, format_search_plan
+from app.utils.i18n import i18n
 from app.utils.prompt import SEARCH_PROMPT
 from app.search.search_after_ai import search_ai
 
@@ -38,7 +39,7 @@ def search_core(messages: str, deep: bool = True):
         return search_results
 
 def search_tool(messages: str):
-    yield "🔍 **开始搜索...**\n\n"
+    yield i18n('search_start')
     messages = [{'role': 'user', 'content': SEARCH_PROMPT.substitute(messages=messages, current_time=get_time())}]
     logger.info("调用搜索工具")
     client = OpenAI(
@@ -60,7 +61,7 @@ def search_tool(messages: str):
     )
     
     if results is None:
-        yield "❌ **搜索关键词生成失败！**"
+        yield i18n('search_keyword_fail')
         return " "
     
     search_request = json2SearchRequests(results)
@@ -70,7 +71,7 @@ def search_tool(messages: str):
     if search_results and hasattr(search_results, 'get_urls') and search_results.get_urls():
         yield from format_urls(search_results.get_urls())
 
-    yield "✅ **搜索完成**\n"
+    yield i18n('search_done')
     yield f"results{search_results.to_str()}"
 
 
