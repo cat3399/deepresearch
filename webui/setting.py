@@ -53,8 +53,8 @@ def get_structured_config(env_path):
         {
             "title": "核心配置", "icon": "fa-key",
             "vars": [
-                {"key": "API_KEY", "type": "password", "placeholder": "用于访问本项目API的密钥,可设置多个,用逗号分隔"},
-                {"key": "ALL_IN_GEMINI_KEY", "type": "textarea", "placeholder": "一行一个或用逗号分隔多个Gemini Key"},
+                {"key": "API_KEY", "type": "password", "placeholder": "用于访问本项目API的密钥"},
+                {"key": "ALL_IN_GEMINI_KEY", "type": "textarea", "placeholder": "用逗号分隔多个Gemini Key"},
                 {"key": "APP_LANG", "type": "select", "options": ["", "zh", "en"], "placeholder": "zh"},
                 {"key": "MAX_SEARCH_RESULTS", "type": "number", "min": 1, "max": 1000, "placeholder": "默认 6"},
                 {"key": "MAX_DEEPRESEARCH_RESULTS", "type": "number", "min": 1, "max": 1000, "placeholder": "默认 3"},
@@ -62,16 +62,16 @@ def get_structured_config(env_path):
             ]
         },
         {
-            "title": "搜索引擎配置", "icon": "fa-search", "test_name": "search_api_worker_test", # <-- 新增
+            "title": "搜索引擎配置", "icon": "fa-search", "test_name": "search_api_worker_test",
             "vars": [
-                {"key": "SEARXNG_URL", "type": "text", "placeholder": "例如: https://searx.example.com/search"},
+                {"key": "SEARXNG_URL", "type": "text", "placeholder": "例如: https://sousuo.emoe.top/search"},
                 {"key": "TAVILY_KEY", "type": "password", "placeholder": "Tavily API Key (可选, SearXNG优先)"},
                 {"key": "TAVILY_MAX_NUM", "type": "number", "min": 5, "max": 50, "placeholder": "默认 20"},
-                {"key": "SEARCH_API_LIMIT", "type": "number", "min": 1, "max": 10, "placeholder": "默认 5"},
+                {"key": "SEARCH_API_LIMIT", "type": "number", "min": 1, "max": 10, "placeholder": "并发限制 默认 5"},
             ]
         },
         {
-            "title": "网页爬虫配置", "icon": "fa-spider", "test_name": "url_to_markdown_test", # <-- 新增
+            "title": "网页爬虫配置", "icon": "fa-spider", "test_name": "url_to_markdown_test",
             "vars": [
                 {"key": "FIRECRAWL_API_URL", "type": "text", "placeholder": "本地部署地址或留空使用官方API"},
                 {"key": "FIRECRAWL_API_KEY", "type": "password", "placeholder": "使用官方API时需要填写"},
@@ -86,11 +86,11 @@ def get_structured_config(env_path):
             "vars": [
                 {"key": "BASE_CHAT_API_KEY", "type": "password", "placeholder": "留空则使用ALL_IN_GEMINI_KEY"},
                 {"key": "BASE_CHAT_API_URL", "type": "text", "placeholder": "API-URL, 例如: https://api.openai.com/v1"},
-                {"key": "BASE_CHAT_MODEL", "type": "text", "placeholder": "模型名称, 例如: gpt-4o"},
+                {"key": "BASE_CHAT_MODEL", "type": "text", "placeholder": "模型名称, 例如: o3"},
             ]
         },
         {
-            "title": "搜索关键词生成模型", "icon": "fa-lightbulb", "test_name": "search_plan_test", # <-- 新增
+            "title": "搜索关键词生成模型", "icon": "fa-lightbulb", "test_name": "search_plan_test",
             "vars": [
                 {"key": "SEARCH_KEYWORD_API_KEY", "type": "password", "placeholder": "留空则继承基础对话模型配置"},
                 {"key": "SEARCH_KEYWORD_API_URL", "type": "text", "placeholder": "留空则继承基础对话模型配置"},
@@ -98,7 +98,7 @@ def get_structured_config(env_path):
             ]
         },
         {
-            "title": "评估模型", "icon": "fa-check-double", "test_name": "evaluate_single_batch_test", # <-- 新增
+            "title": "评估模型", "icon": "fa-check-double", "test_name": "evaluate_single_batch_test",
             "vars": [
                 {"key": "EVALUATE_THREAD_NUM", "type": "number", "min": 1, "max": 20, "placeholder": "默认 5"},
                 {"key": "EVALUATE_API_KEY", "type": "password", "placeholder": "留空则继承基础对话模型配置"},
@@ -107,7 +107,7 @@ def get_structured_config(env_path):
             ]
         },
         {
-            "title": "内容压缩模型", "icon": "fa-compress-arrows-alt", "test_name": "compress_url_content_test", # <-- 新增
+            "title": "内容压缩模型", "icon": "fa-compress-arrows-alt", "test_name": "compress_url_content_test",
             "vars": [
                 {"key": "COMPRESS_API_TYPE", "type": "select", "options": ["", "OPENAI", "GEMINI"], "placeholder": "留空默认GEMINI"},
                 {"key": "COMPRESS_API_KEY", "type": "password", "placeholder": "留空则继承基础对话模型配置"},
@@ -127,7 +127,7 @@ def get_structured_config(env_path):
         {
             "title": "杂项", "icon": "fa-sliders-h",
             "vars": [
-                {"key": "HEARTBEAT_TIMEOUT", "type": "number", "min": 10, "placeholder": "单位:秒, 9999为禁用"},
+                {"key": "HEARTBEAT_TIMEOUT", "type": "number", "min": 10, "placeholder": "单位:秒"},
             ]
         }
     ]
@@ -141,7 +141,6 @@ def get_structured_config(env_path):
     processed_keys = set()
     
     for group_def in group_definitions:
-        # 直接将 test_name（如果存在）复制到最终的 section 数据中
         section = {"title": group_def["title"], "icon": group_def["icon"], "vars": [], "test_name": group_def.get("test_name")}
         for var_def in group_def.get("vars", []):
             key = var_def["key"]
@@ -183,7 +182,7 @@ def get_structured_config(env_path):
     return config_data
 
 
-# --- 路由函数 (核心改动) ---
+# --- 路由函数 ---
 
 @env_editor_bp.route('/setting', methods=['GET'])
 def config_page():

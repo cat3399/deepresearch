@@ -33,8 +33,9 @@
             color: var(--text-color);
         }
         .container {
-            max-width: 900px;
+            max-width: 1200px; /* 增加容器宽度以适应双列布局 */
             margin: auto;
+            padding-bottom: 100px; /* 为悬浮按钮留出空间 */
         }
         h1 {
             color: var(--text-color);
@@ -67,11 +68,19 @@
         }
         .alert-danger::before { content: "\f071"; }
 
+        /* --- 核心修改1: 并排展示 --- */
+        .accordion {
+            display: grid;
+            /* 响应式网格布局：自动适应宽度，每列最小350px，最大1fr（平分空间） */
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem; /* 卡片之间的间距 */
+        }
+
         .accordion .card {
             background-color: var(--card-background-color);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            margin-bottom: 1rem;
+            margin-bottom: 0; /* 网格布局不需要 margin-bottom */
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             overflow: hidden;
             transition: box-shadow 0.2s;
@@ -162,25 +171,6 @@
             cursor: pointer;
             color: #6c757d;
         }
-        .btn-container {
-            text-align: right;
-            margin-top: 2rem;
-        }
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.8em 2em;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1.1em;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-        .btn:hover {
-            background-color: var(--primary-hover-color);
-        }
-        /* --- 新增样式 for Test Button --- */
         .test-container {
             border-top: 1px dashed var(--border-color);
             padding-top: 1rem;
@@ -191,12 +181,44 @@
             background-color: var(--secondary-color);
             padding: 0.6em 1.2em;
             font-size: 0.9em;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
         .btn-test:hover {
             background-color: var(--secondary-hover-color);
         }
         .btn-test .fas {
             margin-right: 5px;
+        }
+
+        /* --- 核心修改2: 醒目的悬浮保存按钮 --- */
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+        .btn-save-fab {
+            background-color: var(--primary-color);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-save-fab:hover {
+            background-color: var(--primary-hover-color);
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -212,7 +234,8 @@
             {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('setting.save_config') }}" method="post">
+        <!-- 将表单的 id 设置为 config-form，以便悬浮按钮可以关联到它 -->
+        <form id="config-form" action="{{ url_for('setting.save_config') }}" method="post">
             <div class="accordion">
             {% if config_data %}
                 {% for section in config_data %}
@@ -230,7 +253,7 @@
                             <label for="{{ var.key }}">{{ var.key }}</label>
                             <div class="input-wrapper">
                                 
-                                <!-- 智能控件渲染逻辑 -->
+                                <!-- 智能控件渲染逻辑 (无变化) -->
                                 {% if var.type == 'select' %}
                                     <select id="{{ var.key }}" name="{{ var.key }}">
                                         {% for option in var.options %}
@@ -260,27 +283,22 @@
                         </div>
                         {% endfor %}
 
-                        <!-- ==================== 新增：关联测试按钮 (修改后) ==================== -->
                         {% if section.test_name %}
                         <div class="test-container">
                             <!-- 
-                                1. 删除了内部的 <form> 和 </form>。
-                                2. 将 <input type="hidden"> 的信息通过 name 和 value 属性移到了 <button> 上。
-                                3. 使用 formaction 属性来覆盖主表单的 action。
-                                4. (可选) 使用 formmethod="post" 明确指定提交方法。
+                                核心修改3: 测试按钮
+                                1. 类型改为 "button" 以防止默认提交。
+                                2. 添加 "btn-run-test" class 用于JS选择。
+                                3. 使用 data-* 属性存储测试信息。
                             -->
-                            <button type="submit" 
-                                    class="btn btn-test" 
-                                    name="test_name" 
-                                    value="{{ section.test_name }}" 
-                                    formaction="{{ url_for('setting.run_test_route') }}" 
-                                    formmethod="post">
+                            <button type="button" 
+                                    class="btn-test btn-run-test" 
+                                    data-test-name="{{ section.test_name }}" 
+                                    data-test-url="{{ url_for('setting.run_test_route') }}">
                                 <i class="fas fa-vial"></i> 测试此模块功能
                             </button>
                         </div>
                         {% endif %}
-
-                        <!-- ========================================================== -->
 
                     </div>
                 </div>
@@ -290,12 +308,11 @@
             {% endif %}
             </div>
 
-            <div class="btn-container">
-                <button type="submit" class="btn">保存全部配置</button>
-            </div>
+            <!-- 原来的保存按钮被移除，由悬浮按钮替代 -->
+            
         </form>
         
-        <!-- ==================== 修改：未关联的测试功能 ==================== -->
+        <!-- 未关联的测试功能 (无变化) -->
         {% if unassociated_tests %}
         <div class="card" style="margin-top: 2rem;">
             <div class="card-header" style="cursor: default;">
@@ -315,33 +332,53 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="btn-container" style="margin-top: 1rem;">
-                        <button type="submit" class="btn">运行选中测试</button>
+                    <div class="btn-container" style="text-align: right; margin-top: 1rem;">
+                        <button type="submit" class="btn-test">运行选中测试</button>
                     </div>
                 </form>
             </div>
         </div>
         {% endif %}
-        <!-- ============================================================ -->
 
     </div>
 
+    <!-- 核心修改2: 悬浮保存按钮的HTML结构 -->
+    <div class="fab-container">
+        <!-- 使用 form="config-form" 属性关联到主表单 -->
+        <button type="submit" form="config-form" class="btn-save-fab" title="保存全部配置">
+            <i class="fas fa-save"></i>
+        </button>
+    </div>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- 折叠面板逻辑 (无变化) ---
             const accordionHeaders = document.querySelectorAll('.accordion .card-header');
-            
             if (accordionHeaders.length > 0) {
                 const firstCard = accordionHeaders[0].parentElement;
-                const firstCardBody = accordionHeaders[0].nextElementSibling;
-                firstCard.classList.add('active');
-                firstCardBody.style.maxHeight = firstCardBody.scrollHeight + "px";
+                if (firstCard) {
+                    firstCard.classList.add('active');
+                    const firstCardBody = firstCard.querySelector('.card-body');
+                    if (firstCardBody) {
+                       firstCardBody.style.maxHeight = firstCardBody.scrollHeight + "px";
+                    }
+                }
             }
-
             accordionHeaders.forEach(header => {
                 header.addEventListener('click', () => {
                     const card = header.parentElement;
                     const cardBody = header.nextElementSibling;
                     const isActive = card.classList.contains('active');
+                    
+                    // 关闭所有已打开的面板
+                    // accordionHeaders.forEach(h => {
+                    //     const c = h.parentElement;
+                    //     c.classList.remove('active');
+                    //     h.nextElementSibling.style.maxHeight = '0';
+                    // });
+
+                    // 打开或关闭当前点击的面板
                     card.classList.toggle('active', !isActive);
                     if (!isActive) {
                         cardBody.style.maxHeight = cardBody.scrollHeight + "px";
@@ -351,6 +388,7 @@
                 });
             });
             
+            // --- 密码可见性切换 (无变化) ---
             const passwordToggles = document.querySelectorAll('.toggle-password');
             passwordToggles.forEach(toggle => {
                 toggle.addEventListener('click', () => {
@@ -359,6 +397,62 @@
                     input.setAttribute('type', type);
                     toggle.classList.toggle('fa-eye');
                     toggle.classList.toggle('fa-eye-slash');
+                });
+            });
+
+            // --- 核心修改3: 测试前自动保存的JS逻辑 ---
+            const testButtons = document.querySelectorAll('.btn-run-test');
+            const mainForm = document.getElementById('config-form');
+
+            testButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault(); // 阻止按钮的默认行为
+
+                    const testName = this.dataset.testName;
+                    const testUrl = this.dataset.testUrl;
+                    
+                    // 禁用按钮，防止重复点击
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在保存...';
+
+                    // 1. 使用 fetch API 异步提交保存表单
+                    fetch(mainForm.action, {
+                        method: 'POST',
+                        body: new FormData(mainForm)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            // 如果保存失败，抛出错误
+                            throw new Error('保存配置失败，请检查网络或后台日志。');
+                        }
+                        return response.text(); // 或者 response.json() 如果后端返回json
+                    })
+                    .then(data => {
+                        // 2. 保存成功后，执行测试
+                        console.log('配置已保存，即将运行测试...');
+                        this.innerHTML = '<i class="fas fa-vial"></i> 正在测试...';
+
+                        // 创建一个隐藏的表单来提交测试请求
+                        const hiddenForm = document.createElement('form');
+                        hiddenForm.method = 'post';
+                        hiddenForm.action = testUrl;
+
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'test_name';
+                        hiddenInput.value = testName;
+
+                        hiddenForm.appendChild(hiddenInput);
+                        document.body.appendChild(hiddenForm);
+                        hiddenForm.submit(); // 提交隐藏表单，页面会跳转并显示测试结果的flash消息
+                    })
+                    .catch(error => {
+                        // 3. 如果过程中出现任何错误，提示用户并恢复按钮
+                        console.error('操作失败:', error);
+                        alert(error.message);
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-vial"></i> 测试此模块功能';
+                    });
                 });
             });
         });
