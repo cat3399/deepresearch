@@ -115,7 +115,7 @@ This is the simplest configuration method. If you only want to use the Gemini AP
 
 *   Copy the `.env.template` file and rename it to `.env`:
 ```bash
-cp .env.template .env
+cp .env.template_en .env
 ```
 *   **The only step required**: Just fill in the `ALL_IN_GEMINI_KEY` in the configuration file.
 *   **Multi-Key Support**: You can enter multiple Gemini API Keys, separated by a comma `,`.
@@ -125,7 +125,7 @@ cp .env.template .env
 **B. Full Configuration (For all models)**
 *   Copy the `.env.template` file and rename it to `.env`:
 ```bash
-cp .env.template .env
+cp .env.template_en .env
 ```
 *   Fill in the necessary API keys and URLs in the `.env` file according to your setup.
 
