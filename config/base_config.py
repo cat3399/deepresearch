@@ -12,17 +12,24 @@ if str(ROOT_DIR) not in sys.path:
 from config.logging_config import logger
 
 env_path = ROOT_DIR.joinpath(".env")
-if os.path.exists(env_path):
-    load_dotenv(env_path)
-    logger.info("环境变量文件已加载")
-else:
-    template_path = ROOT_DIR.joinpath(".env.template")
-    if os.path.exists(template_path):
-        shutil.copy(template_path, env_path)
-        load_dotenv(env_path)
-        logger.info("未找到.env文件，已从模板复制一份")
+
+
+def load_env() -> None:
+    """加载 .env 文件到环境变量中"""
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=True)
+        logger.info("环境变量文件已加载")
     else:
-        logger.error("未找到.env文件，也没有找到模板文件")
+        template_path = ROOT_DIR.joinpath(".env.template")
+        if os.path.exists(template_path):
+            shutil.copy(template_path, env_path)
+            load_dotenv(env_path, override=True)
+            logger.info("未找到.env文件，已从模板复制一份")
+        else:
+            logger.error("未找到.env文件，也没有找到模板文件")
+
+
+load_env()
 
 # 应用语言，可通过 APP_LANG 环境变量设置，默认中文
 APP_LANG = os.getenv("APP_LANG", "zh").lower()
@@ -297,3 +304,10 @@ def validate_config():
     return True
 
 CONFIG_VALID = validate_config()
+
+
+def reload_config() -> None:
+    """重新加载配置项,用于 WebUI 热更新."""
+    load_env()
+    import importlib, sys
+    importlib.reload(sys.modules[__name__])

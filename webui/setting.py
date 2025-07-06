@@ -2,19 +2,19 @@ import os
 from pathlib import Path
 import sys
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from dotenv import find_dotenv, set_key, dotenv_values
+from dotenv import set_key, dotenv_values
 
-# --- 路径设置 (保持不变) ---
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 env_path = ROOT_DIR.joinpath(".env")
 
-# --- 蓝图定义 (保持不变) ---
+from config.base_config import reload_config, API_KEY
+from config.logging_config import logger
+
 env_editor_bp = Blueprint('setting', __name__, template_folder='templates')
 
 
-# --- 辅助函数 (微调注释处理) ---
 def get_comments_from_env(filepath):
     """
     从 .env 文件中解析出每个键上方的注释。
@@ -126,6 +126,7 @@ def get_structured_config(env_path):
             "title": "杂项", "icon": "fa-sliders-h",
             "vars": [
                 {"key": "HEARTBEAT_TIMEOUT", "type": "number", "min": 0, "placeholder": "单位:秒, 0为禁用"},
+                {"key": "APP_LANG", "type": "select", "options": ["", "zh", "en"], "placeholder": "zh"},
             ]
         }
     ]
@@ -195,9 +196,9 @@ def save_config():
     try:
         for key, value in request.form.items():
             set_key(env_path, key, value, quote_mode="always")
-        
-        flash('配置已成功保存！', 'success')
-        flash('重要提示：通常需要重启服务才能让新的配置生效。', 'warning')
+        reload_config()
+        logger.info('配置已成功保存并重新加载！')
+        flash('配置已成功保存并重新加载！', 'success')
     except Exception as e:
         flash(f'保存配置时发生错误: {e}', 'danger')
     
