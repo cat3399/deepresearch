@@ -10,6 +10,8 @@
         :root {
             --primary-color: #007bff;
             --primary-hover-color: #0056b3;
+            --secondary-color: #6c757d;
+            --secondary-hover-color: #5a6268;
             --background-color: #f8f9fa;
             --card-background-color: #ffffff;
             --text-color: #333;
@@ -19,9 +21,9 @@
             --success-bg: #d4edda;
             --success-text: #155724;
             --success-border: #c3e6cb;
-            --warning-bg: #fff3cd;
-            --warning-text: #856404;
-            --warning-border: #ffeeba;
+            --danger-bg: #f8d7da;
+            --danger-text: #721c24;
+            --danger-border: #f5c6cb;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -58,12 +60,12 @@
             border-color: var(--success-border);
         }
         .alert-success::before { content: "\f058"; }
-        .alert-warning {
-            background-color: var(--warning-bg);
-            color: var(--warning-text);
-            border-color: var(--warning-border);
+        .alert-danger {
+            background-color: var(--danger-bg);
+            color: var(--danger-text);
+            border-color: var(--danger-border);
         }
-        .alert-warning::before { content: "\f071"; }
+        .alert-danger::before { content: "\f071"; }
 
         .accordion .card {
             background-color: var(--card-background-color);
@@ -178,6 +180,24 @@
         .btn:hover {
             background-color: var(--primary-hover-color);
         }
+        /* --- 新增样式 for Test Button --- */
+        .test-container {
+            border-top: 1px dashed var(--border-color);
+            padding-top: 1rem;
+            margin-top: 1rem;
+            text-align: right;
+        }
+        .btn-test {
+            background-color: var(--secondary-color);
+            padding: 0.6em 1.2em;
+            font-size: 0.9em;
+        }
+        .btn-test:hover {
+            background-color: var(--secondary-hover-color);
+        }
+        .btn-test .fas {
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -239,6 +259,29 @@
                             {% endif %}
                         </div>
                         {% endfor %}
+
+                        <!-- ==================== 新增：关联测试按钮 (修改后) ==================== -->
+                        {% if section.test_name %}
+                        <div class="test-container">
+                            <!-- 
+                                1. 删除了内部的 <form> 和 </form>。
+                                2. 将 <input type="hidden"> 的信息通过 name 和 value 属性移到了 <button> 上。
+                                3. 使用 formaction 属性来覆盖主表单的 action。
+                                4. (可选) 使用 formmethod="post" 明确指定提交方法。
+                            -->
+                            <button type="submit" 
+                                    class="btn btn-test" 
+                                    name="test_name" 
+                                    value="{{ section.test_name }}" 
+                                    formaction="{{ url_for('setting.run_test_route') }}" 
+                                    formmethod="post">
+                                <i class="fas fa-vial"></i> 测试此模块功能
+                            </button>
+                        </div>
+                        {% endif %}
+
+                        <!-- ========================================================== -->
+
                     </div>
                 </div>
                 {% endfor %}
@@ -251,13 +294,42 @@
                 <button type="submit" class="btn">保存全部配置</button>
             </div>
         </form>
+        
+        <!-- ==================== 修改：未关联的测试功能 ==================== -->
+        {% if unassociated_tests %}
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header" style="cursor: default;">
+                 <div>
+                    <i class="fas fa-flask icon"></i>
+                    <h2>其他测试</h2>
+                </div>
+            </div>
+            <div class="card-body" style="max-height: 5000px; padding: 1.5rem;">
+                <form action="{{ url_for('setting.run_test_route') }}" method="post">
+                    <div class="form-group">
+                        <label for="test_name">选择要测试的功能</label>
+                        <select id="test_name" name="test_name" required>
+                            <option value="" disabled selected>请选择...</option>
+                            {% for t in unassociated_tests %}
+                            <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="btn-container" style="margin-top: 1rem;">
+                        <button type="submit" class="btn">运行选中测试</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        <!-- ============================================================ -->
+
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const accordionHeaders = document.querySelectorAll('.card-header');
+            const accordionHeaders = document.querySelectorAll('.accordion .card-header');
             
-            // 默认展开第一个面板
             if (accordionHeaders.length > 0) {
                 const firstCard = accordionHeaders[0].parentElement;
                 const firstCardBody = accordionHeaders[0].nextElementSibling;
@@ -265,24 +337,12 @@
                 firstCardBody.style.maxHeight = firstCardBody.scrollHeight + "px";
             }
 
-            // Accordion (折叠面板) 逻辑
             accordionHeaders.forEach(header => {
                 header.addEventListener('click', () => {
                     const card = header.parentElement;
                     const cardBody = header.nextElementSibling;
-                    
                     const isActive = card.classList.contains('active');
-
-                    // 可选：关闭其他所有打开的面板
-                    // document.querySelectorAll('.card.active').forEach(activeCard => {
-                    //     if (activeCard !== card) {
-                    //         activeCard.classList.remove('active');
-                    //         activeCard.querySelector('.card-body').style.maxHeight = '0';
-                    //     }
-                    // });
-
                     card.classList.toggle('active', !isActive);
-
                     if (!isActive) {
                         cardBody.style.maxHeight = cardBody.scrollHeight + "px";
                     } else {
@@ -290,8 +350,7 @@
                     }
                 });
             });
-
-            // 密码可见性切换逻辑
+            
             const passwordToggles = document.querySelectorAll('.toggle-password');
             passwordToggles.forEach(toggle => {
                 toggle.addEventListener('click', () => {

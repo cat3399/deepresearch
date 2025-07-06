@@ -3,7 +3,7 @@ import time
 import traceback
 from pathlib import Path
 from openai import OpenAI
-from typing import Optional, Dict, Callable
+from typing import Optional, Dict, Callable, List, Tuple
 
 # 获取项目根目录
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -75,6 +75,33 @@ def summary_test():
     rsp = summary(user_messages)
     if rsp:
         return True
+
+# --- 供 WebUI 调用的辅助函数 ---
+def get_available_tests() -> List[str]:
+    """返回当前可用的测试函数名称列表"""
+    get_available_tests_list = ["search_api_worker_test", "url_to_markdown_test",
+                                "compress_url_content_test", "search_plan_test",
+                                "evaluate_single_batch_test", "summary_test"]
+    return get_available_tests_list
+
+
+def run_single_test(test_name: str) -> Tuple[bool, str]:
+    """运行指定的测试函数并返回 (是否成功, 信息)"""
+    test_functions: Dict[str, Callable] = {
+        name: obj for name, obj in globals().items() if callable(obj) and name.endswith('_test')
+    }
+    if test_name not in test_functions:
+        return False, f"Test '{test_name}' not found"
+
+    try:
+        result = test_functions[test_name]()
+        if result:
+            return True, "PASS"
+        else:
+            return False, "Test returned a falsy value"
+    except Exception as e:
+        logger.exception("Error running test %s", test_name)
+        return False, str(e)
     
 # --- 测试运行器 (核心修改部分) ---
 def run_tests(specific_test_name: Optional[str] = None):
