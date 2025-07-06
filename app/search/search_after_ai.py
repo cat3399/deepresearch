@@ -135,7 +135,6 @@ def evaluate_relevance(search_purpose : str, search_results :List[Dict]):
     batches = []
     for i in range(0, len(search_results), BATCH_SIZE):
         batches.append(search_results[i:i+BATCH_SIZE])
-    
     logger.info(f"将 {len(search_results)} 个结果分为 {len(batches)} 批进行评估")
     
     # 使用线程池并发处理评估任务
@@ -205,7 +204,9 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
         unique_results = new_results
     
     logger.info(f"搜索完成,处理后共有 {len(unique_results)} 个结果,黑名单排除了{len(new_results)-len(unique_results)}个结果")
-    
+    if len(unique_results) > 50:
+        unique_results = unique_results[:50]
+        logger.info("搜索结果过多,仅取前50个结果")
     if not unique_results:
         logger.warning("没有找到任何搜索结果")
         return {}
