@@ -159,7 +159,6 @@ if ALL_IN_GEMINI_KEY:
     # 原生Gemini格式
     native_gemini_url = "https://generativelanguage.googleapis.com"
     model_flash_native = "gemini-2.5-flash-lite-preview-06-17"
-    native_gemini_type = "GEMINI"
 
     # --- 为每个模型组按需应用默认值 ---
     
@@ -181,7 +180,7 @@ if ALL_IN_GEMINI_KEY:
     if not COMPRESS_API_KEY: COMPRESS_API_KEY = get_random_api_key(gemini_key_str)
     if not COMPRESS_API_URL: COMPRESS_API_URL = native_gemini_url
     if not COMPRESS_MODEL: COMPRESS_MODEL = model_flash_native
-    if not COMPRESS_API_TYPE: COMPRESS_API_TYPE = native_gemini_type
+    if not COMPRESS_API_TYPE: COMPRESS_API_TYPE = "GEMINI"
 
     # 总结模型 (Pro)
     if not SUMMARY_API_KEY: SUMMARY_API_KEY = get_random_api_key(gemini_key_str)
