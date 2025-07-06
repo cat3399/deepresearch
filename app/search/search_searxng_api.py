@@ -10,7 +10,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from config.logging_config import logger
-from config.base_config import SEARXNG_URL,TAVILY_KEY,TAVILY_MAX_NUM
+from config import base_config as config
 
 # 黑名单文件路径 (假设在项目根目录)
 BLACKLIST_FILE = ROOT_DIR / 'blacklist.txt'
@@ -34,7 +34,7 @@ def by_searxng(query, language, time_page = [0,0,0]):
     while retry_count < MAX_RETRIES:
         try:
             logger.info(f"正在搜索: '{query}' (语言:{language}, 时间页:{time_page})")
-            response = requests.get(SEARXNG_URL, params=params, timeout=15)
+            response = requests.get(config.SEARXNG_URL, params=params, timeout=15)
             response.raise_for_status() # 检查 HTTP 错误状态码
 
             results = response.json().get('results', [])
@@ -77,13 +77,13 @@ def by_tavily(query, language, time_page = [0,0,0]):
         "topic": "general",
         "search_depth": "basic",
         "chunks_per_source": 3,
-        "max_results": TAVILY_MAX_NUM,
+        "max_results": config.TAVILY_MAX_NUM,
         "time_range": time_range,
         "include_raw_content": False,
         "country": None
     }
     headers = {
-        "Authorization": f"Bearer {TAVILY_KEY}",
+        "Authorization": f"Bearer {config.TAVILY_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -119,10 +119,10 @@ def by_tavily(query, language, time_page = [0,0,0]):
 # --- 搜索工作函数 ---
 def search_api_worker(query, language = "all", time_page = [0,0,0]):
     results = ""
-    if SEARXNG_URL:
+    if config.SEARXNG_URL:
         logger.info(f"使用SeaXNG Search API")
         results = by_searxng(query=query,language=language,time_page=time_page)
-    elif TAVILY_KEY:
+    elif config.TAVILY_KEY:
         logger.info(f"使用Tavily Search API")
         results = by_tavily(query=query,language=language,time_page=time_page)
 

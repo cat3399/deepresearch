@@ -12,7 +12,7 @@ from app.api.sse_add_heartbeat import process_messages_stream_heartbeat
 from app.utils.prompt import SYS_PROMPT
 from app.utils.tools import get_time
 from app.chat.functions import process_messages,process_messages_stream
-from config.base_config import SUMMARY_MODEL,API_KEY
+from config import base_config as config
 
 SHOW_MODEL = "search-llm"
 
@@ -25,7 +25,7 @@ def register_routes(app):
         search_mode = 1
         # 校验 API key
         auth = request.headers.get("Authorization", "")
-        if auth != f"Bearer {API_KEY}":
+        if auth != f"Bearer {config.API_KEY}":
             return make_response(jsonify({"error": f"Invalid API Key {auth}"}), 401)
         
         data = request.get_json()
@@ -74,13 +74,13 @@ def register_routes(app):
     def models_api():
         # 校验 API key
         auth = request.headers.get("Authorization", "")
-        if auth != f"Bearer {API_KEY}":
+        if auth != f"Bearer {config.API_KEY}":
             return make_response(jsonify({"error": f"Invalid API Key {auth}"}), 401)
         
         models = {
             "data": [
-                {"id": f"{SUMMARY_MODEL}-search", "object": "model", "owned_by": "cat3399"},
-                {"id": f"{SUMMARY_MODEL}-deep-research", "object": "model", "owned_by": "cat3399"},
+                {"id": f"{config.SUMMARY_MODEL}-search", "object": "model", "owned_by": "cat3399"},
+                {"id": f"{config.SUMMARY_MODEL}-deep-research", "object": "model", "owned_by": "cat3399"},
             ]
         }
         return jsonify(models)

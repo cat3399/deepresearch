@@ -9,7 +9,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 env_path = ROOT_DIR.joinpath(".env")
 
-from config.base_config import reload_config, API_KEY
+from config import base_config as config
 from config.logging_config import logger
 
 env_editor_bp = Blueprint('setting', __name__, template_folder='templates')
@@ -196,7 +196,7 @@ def save_config():
     try:
         for key, value in request.form.items():
             set_key(env_path, key, value, quote_mode="always")
-        reload_config()
+        config.reload_config()
         logger.info('配置已成功保存并重新加载！')
         flash('配置已成功保存并重新加载！', 'success')
     except Exception as e:

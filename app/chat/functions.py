@@ -15,7 +15,7 @@ if str(ROOT_DIR) not in sys.path:
 from app.utils.tools import sse_create_openai_data, get_time
 from app.utils.i18n import i18n
 from app.utils.url2txt import url_to_markdown
-from config.base_config import BASE_CHAT_API_KEY, BASE_CHAT_API_URL, BASE_CHAT_MODEL
+from config import base_config as config
 from config.logging_config import logger
 from app.utils.prompt import DATA_ADD_PROMPT
 from app.search.fc_search import search_tool
@@ -24,8 +24,8 @@ from app.chat.chat_summary import summary
 
 # 创建客户端
 CLIENT = OpenAI(
-    api_key=BASE_CHAT_API_KEY,
-    base_url=BASE_CHAT_API_URL
+    api_key=config.BASE_CHAT_API_KEY,
+    base_url=config.BASE_CHAT_API_URL
 )
 
 class FunctionRegistry:
@@ -90,7 +90,7 @@ def get_url_content(urls: list[str]) -> str:
     #     return '获取网页内容失败'
     return str(content_dict)
 
-def chat_completion(messages: list, chat_model=BASE_CHAT_MODEL, client=CLIENT, use_tools=False, stream :bool = False) -> Any:
+def chat_completion(messages: list, chat_model=config.BASE_CHAT_MODEL, client=CLIENT, use_tools=False, stream :bool = False) -> Any:
     start_time = time.time()
     
     # 记录请求数据

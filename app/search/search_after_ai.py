@@ -18,11 +18,7 @@ from app.utils.tools import get_time, response2json
 from app.utils.black_url import URL_BLACKLIST
 from app.utils.compress_content import compress_url_content
 from config.logging_config import logger
-from config.base_config import \
-    SEARCH_API_LIMIT, SEARCH_KEYWORD_API_KEY,  SEARCH_KEYWORD_API_URL, MAX_SEARCH_RESULTS,\
-    EVALUATE_API_KEY, EVALUATE_API_URL, EVALUATE_MODEL, \
-    EVALUATE_THREAD_NUM,\
-    CRAWL_THREAD_NUM
+from config import base_config as config
 from app.utils.prompt import RELEVANCE_EVALUATION_PROMPT
     
 
@@ -33,8 +29,8 @@ MAX_RETRIES = 3  # 最大重试次数
 BATCH_SIZE = 15
 # OpenAI 客户端初始化
 client = OpenAI(
-    api_key=SEARCH_KEYWORD_API_KEY,
-    base_url=SEARCH_KEYWORD_API_URL
+    api_key=config.SEARCH_KEYWORD_API_KEY,
+    base_url=config.SEARCH_KEYWORD_API_URL
 )
 
 def is_duplicate(new_result, existing_results):
@@ -67,8 +63,8 @@ def is_duplicate(new_result, existing_results):
 def evaluate_single_batch(batch_idx : int, batch : List[Dict], search_purpose : str):
     """评估单批次搜索结果的相关性"""
     client = OpenAI(
-        api_key=EVALUATE_API_KEY,
-        base_url=EVALUATE_API_URL
+        api_key=config.EVALUATE_API_KEY,
+        base_url=config.EVALUATE_API_URL
     )
     # 构造格式化后的结果文本
     formatted_results = [
@@ -91,7 +87,7 @@ def evaluate_single_batch(batch_idx : int, batch : List[Dict], search_purpose : 
         try:
             messages = [{"role": "user", "content": evaluation_prompt}]
             response = client.chat.completions.create(
-                model=EVALUATE_MODEL,
+                model=config.EVALUATE_MODEL,
                 messages=messages,
                 temperature=0.1,
                 stream=False
@@ -143,7 +139,7 @@ def evaluate_relevance(search_purpose : str, search_results :List[Dict]):
     logger.info(f"将 {len(search_results)} 个结果分为 {len(batches)} 批进行评估")
     
     # 使用线程池并发处理评估任务
-    with ThreadPoolExecutor(max_workers=min(EVALUATE_THREAD_NUM, len(batches))) as executor:
+    with ThreadPoolExecutor(max_workers=min(config.EVALUATE_THREAD_NUM, len(batches))) as executor:
         futures = []
         for i, batch in enumerate(batches):
             futures.append(executor.submit(evaluate_single_batch, i, batch, search_purpose))
@@ -179,7 +175,7 @@ def search_ai(search_request: SearchRequest, deep: bool = True) -> SearchResults
     time_page = search_request.time_page
     logger.info(f"开始搜索 - 目的: {search_purpose}")
     
-    with ThreadPoolExecutor(max_workers=SEARCH_API_LIMIT) as executor:
+    with ThreadPoolExecutor(max_workers=config.SEARCH_API_LIMIT) as executor:
         futures = []
         for data in search_request.query_keys:
             query = data.key
@@ -261,7 +257,7 @@ def deepscan(search_response: list, search_request: SearchRequest) -> SearchResu
     search_purpose = search_request.search_purpose
     # 使用多线程并发处理URL内容获取
     if search_response:
-        with ThreadPoolExecutor(max_workers=CRAWL_THREAD_NUM) as executor:
+        with ThreadPoolExecutor(max_workers=config.CRAWL_THREAD_NUM) as executor:
             futures = {}
             for i, result in enumerate(search_response):
                 url = result['url']

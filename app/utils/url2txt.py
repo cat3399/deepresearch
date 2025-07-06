@@ -14,13 +14,13 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from config.base_config import FIRECRAWL_API_URL,FIRECRAWL_API_KEY,CRAWL4AI_API_URL, AVAILABLE_EXTENSIONS, JINA_API_KEY, JINA_API_URL
+from config import base_config as config
 from config.logging_config import logger
 from app.utils.tools import download_file,extract_text_from_file
 
 MIN_RESULT_LEN = 1000
 
-def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> str:
+def by_firecrawl(url: str, server_url: str = config.FIRECRAWL_API_URL) -> str:
     scrape_url = f"{server_url}/v1/scrape"
     payload = {
         "url": url,
@@ -31,8 +31,8 @@ def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> str:
     headers = {
         "Content-Type": "application/json",
     }
-    if FIRECRAWL_API_KEY:
-        headers["Authorization"] = f"Bearer {FIRECRAWL_API_KEY}"
+    if config.FIRECRAWL_API_KEY:
+        headers["Authorization"] = f"Bearer {config.FIRECRAWL_API_KEY}"
     response = requests.post(scrape_url, json=payload, headers=headers, timeout=30)
     response.raise_for_status()
     
@@ -40,7 +40,7 @@ def by_firecrawl(url: str, server_url: str = FIRECRAWL_API_URL) -> str:
     markdown_str = data_json['data']['markdown']
     return markdown_str
 
-def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
+def by_crawl4ai(url: str, server_url: str = config.CRAWL4AI_API_URL) ->str:
     # headers = {"Authorization": "Bearer cat3399"}
     crawl_paylod = {
         "urls" : [f"{url}"], 
@@ -55,13 +55,13 @@ def by_crawl4ai(url: str, server_url: str = CRAWL4AI_API_URL) ->str:
     result_makrdown = rsp_json["results"][0]["markdown"]["raw_markdown"]
     return result_makrdown
 
-def by_jina(url: str, server_url: str = JINA_API_URL) -> str:
+def by_jina(url: str, server_url: str = config.JINA_API_URL) -> str:
     crawl_url = server_url + "/" + url
     headers = {
         "X-Respond-With": "markdown",
     }
-    if JINA_API_KEY:
-        headers["Authorization"] = f"Bearer {JINA_API_KEY}"
+    if config.JINA_API_KEY:
+        headers["Authorization"] = f"Bearer {config.JINA_API_KEY}"
     response = requests.get(crawl_url, headers=headers, timeout=40)
     response.raise_for_status()
     return response.text
@@ -83,8 +83,8 @@ def url_to_markdown(url: str) -> Optional[str]:
     url = url.strip(' ')
     url = url.lower()
     # Jina支持直接读取
-    if not JINA_API_URL:
-        if url.endswith(tuple(AVAILABLE_EXTENSIONS)):
+    if not config.JINA_API_URL:
+        if url.endswith(tuple(config.AVAILABLE_EXTENSIONS)):
             logger.info(f"下载文件 { url.rsplit('//')[-1] } 中...")
             file_name = download_file(url)
             if file_name:
@@ -100,7 +100,7 @@ def url_to_markdown(url: str) -> Optional[str]:
         attempt_count += 1  # 在循环开始就增加计数
         try:
             # firecrawl
-            if FIRECRAWL_API_URL:
+            if config.FIRECRAWL_API_URL:
                 try:
                     result = by_firecrawl(url)
                     if result and result != 'error' and len(result) > MIN_RESULT_LEN:
@@ -112,7 +112,7 @@ def url_to_markdown(url: str) -> Optional[str]:
                     logger.error(f"Firecrawl抓取{url}失败: {str(e)}")
 
             # crawl4ai 
-            if CRAWL4AI_API_URL:
+            if config.CRAWL4AI_API_URL:
                 try:
                     result = by_crawl4ai(url)
                     if result and result != 'error' and len(result) > MIN_RESULT_LEN:
@@ -125,7 +125,7 @@ def url_to_markdown(url: str) -> Optional[str]:
                     logger.error(f"Crawl4ai抓取{url}失败: {str(e)}")
 
             # jina
-            if JINA_API_URL:
+            if config.JINA_API_URL:
                 try:
                     result = by_jina(url)
                     if result and result != 'error' and len(result) > MIN_RESULT_LEN:
