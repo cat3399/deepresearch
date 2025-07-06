@@ -282,7 +282,7 @@ For the complete list of dependencies, please see `requirements.txt`.
 *   More robust project management.
 *   Refactor using asyncio to prevent timeouts and enhance concurrency.
 *   Improved architectural design (the current sequential iteration is not suitable for all tasks).
-*   Intelligently extract URLs from webpage content.
+*   Intelligently extract URLs and pictures from webpage content.
 *   Support for follow-up questions.
 
 ## 🤝 Contributing
