@@ -14,18 +14,18 @@ if str(ROOT_DIR) not in sys.path:
 
 from app.utils.tools import sse_create_openai_data, sse_gemini2openai_data
 from app.utils.i18n import i18n
-from config.base_config import SUMMARY_API_KEY,SUMMARY_API_URL,SUMMARY_MODEL,SUMMARY_API_TYPE
+from config import base_config as config
 from config.logging_config import logger
 
 
-if SUMMARY_API_TYPE != "GEMINI":
+if config.SUMMARY_API_TYPE != "GEMINI":
     client = OpenAI(
-        api_key = SUMMARY_API_KEY,
-        base_url = SUMMARY_API_URL,
+        api_key = config.SUMMARY_API_KEY,
+        base_url = config.SUMMARY_API_URL,
     )
 
 MAX_RETRIES = 3
-def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
+def openai_stream_no(messages:list[dict], model:str = config.SUMMARY_MODEL):
     retry_count = 0
     while retry_count < MAX_RETRIES:
         try:
@@ -58,7 +58,7 @@ def openai_stream_no(messages:list[dict], model:str = SUMMARY_MODEL):
             else:
                 logger.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
 
-def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
+def openai_stream_yes(messages: list[dict], model: str = config.SUMMARY_MODEL):
     retry_count = 0
     while retry_count < MAX_RETRIES:
         try:
@@ -101,12 +101,12 @@ def openai_stream_yes(messages: list[dict], model: str = SUMMARY_MODEL):
             else:
                 logger.warning(f"{model}请求失败: {str(e)} 正在重试{retry_count}")
 
-def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
+def gemini_stream_no(messages: list[str],model:str = config.SUMMARY_MODEL) -> str:
     retry_count = 0
     while retry_count < MAX_RETRIES:
         try:
             start_time = time.time()
-            api_key = SUMMARY_API_KEY
+            api_key = config.SUMMARY_API_KEY
             # print(messages)
             # Gemini API URL
             api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -155,10 +155,10 @@ def gemini_stream_no(messages: list[str],model:str = SUMMARY_MODEL) -> str:
             else:
                 logger.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
 
-def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
+def gemini_stream_yes(messages: list[str],model:str = config.SUMMARY_MODEL):
     retry_count = 0
     try:
-        api_key = SUMMARY_API_KEY
+        api_key = config.SUMMARY_API_KEY
 
         # print(messages)
         # Gemini API URL
@@ -198,7 +198,7 @@ def gemini_stream_yes(messages: list[str],model:str = SUMMARY_MODEL):
         else:
             logger.warning(f"gemini回复出现问题!!! {e}\n 正在重试{retry_count}")
 
-def summary(messages:list[dict], model:str = SUMMARY_MODEL, stream:bool =False):
+def summary(messages:list[dict], model:str = config.SUMMARY_MODEL, stream:bool =False):
     """
     与deepseek API 进行文字对话 (非流式)。
 
@@ -210,7 +210,7 @@ def summary(messages:list[dict], model:str = SUMMARY_MODEL, stream:bool =False):
         模型回复的文本内容
     """
     
-    if SUMMARY_API_TYPE == "GEMINI":
+    if config.SUMMARY_API_TYPE == "GEMINI":
         if stream:
             rsp_stream = gemini_stream_yes(messages,model)
             for line in rsp_stream.iter_lines():
@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
     # print("r1:", reason_content,response_data)
 
-    s = summary(messages=user_messages,model=SUMMARY_MODEL,stream=True)
+    s = summary(messages=user_messages,model=config.SUMMARY_MODEL,stream=True)
     # time.sleep(5)
     for ss in s:
         if ss:

@@ -6,7 +6,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from config.base_config import MAX_SEARCH_RESULTS
+from config import base_config as config
 
 class QueryKeys:
     """查询键类，用于存储搜索关键词和语言"""
@@ -22,7 +22,7 @@ class QueryKeys:
 class SearchRequest:
     """搜索请求数据类，包含搜索查询的基本参数"""
     
-    def __init__(self, query_keys: List[QueryKeys] = [QueryKeys()], time_page: list[int] = [0,0,0], search_purpose: str = "", search_restrictions: str = "", max_search_results: int = MAX_SEARCH_RESULTS):
+    def __init__(self, query_keys: List[QueryKeys] = [QueryKeys()], time_page: list[int] = [0,0,0], search_purpose: str = "", search_restrictions: str = "", max_search_results: int = config.MAX_SEARCH_RESULTS):
 
             
         # 确保时间范围格式正确，如果为空或格式错误则使用默认值
@@ -39,7 +39,7 @@ class SearchRequest:
         self.search_purpose = search_purpose
         self.search_restrictions = search_restrictions
         self.query_keys = query_keys
-        self.max_search_results = max_search_results if max_search_results else MAX_SEARCH_RESULTS
+        self.max_search_results = max_search_results if max_search_results else config.MAX_SEARCH_RESULTS
     
     def __str__(self) -> str:
         return f"SearchRequest(query_keys='{[query_key for query_key in self.query_keys]}', time_page={self.time_page})"

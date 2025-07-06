@@ -1,5 +1,5 @@
 # Simple i18n support for fixed generator outputs
-from config.base_config import APP_LANG
+from config import base_config as config
 
 _MESSAGES = {
     'start_deep_research': {
@@ -110,7 +110,7 @@ _MESSAGES = {
 
 
 def i18n(key: str, **kwargs) -> str:
-    lang = APP_LANG if APP_LANG in ('zh', 'en') else 'zh'
+    lang = config.APP_LANG if config.APP_LANG in ('zh', 'en') else 'zh'
     msg = _MESSAGES.get(key, {}).get(lang, '')
     if kwargs:
         try:

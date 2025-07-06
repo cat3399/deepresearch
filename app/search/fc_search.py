@@ -8,7 +8,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from config.base_config import SEARCH_KEYWORD_MODEL, SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL
+from config import base_config as config
 from config.logging_config import logger
 from app.utils.tools import format_urls, response2json, get_time, json2SearchRequests, format_search_plan
 from app.utils.i18n import i18n
@@ -18,11 +18,11 @@ from app.search.search_after_ai import search_ai
 def search_core(messages: str, deep: bool = True):
     messages = [{'role': 'user', 'content': SEARCH_PROMPT.substitute(messages=messages,current_time=get_time())}] 
     client = OpenAI(
-        api_key=SEARCH_KEYWORD_API_KEY,
-        base_url=SEARCH_KEYWORD_API_URL
+        api_key=config.SEARCH_KEYWORD_API_KEY,
+        base_url=config.SEARCH_KEYWORD_API_URL
     )
     llm_rsp = client.chat.completions.create(
-        model=SEARCH_KEYWORD_MODEL,
+        model=config.SEARCH_KEYWORD_MODEL,
         messages=messages,
         temperature=0.1,
         stream=False
@@ -43,12 +43,12 @@ def search_tool(messages: str):
     messages = [{'role': 'user', 'content': SEARCH_PROMPT.substitute(messages=messages, current_time=get_time())}]
     logger.info("调用搜索工具")
     client = OpenAI(
-        api_key=SEARCH_KEYWORD_API_KEY,
-        base_url=SEARCH_KEYWORD_API_URL
+        api_key=config.SEARCH_KEYWORD_API_KEY,
+        base_url=config.SEARCH_KEYWORD_API_URL
     )
     
     llm_rsp = client.chat.completions.create(
-        model=SEARCH_KEYWORD_MODEL,
+        model=config.SEARCH_KEYWORD_MODEL,
         messages=messages,
         temperature=0.1,
         stream=False

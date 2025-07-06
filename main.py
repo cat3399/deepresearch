@@ -4,7 +4,7 @@ from waitress import serve
 
 from app.utils.test_api import run_tests
 from config.logging_config import logger
-from config.base_config import BASE_CHAT_MODEL
+from config import base_config as config
 from app.api.routes import register_routes
 from webui.setting import env_editor_bp
 
@@ -15,7 +15,7 @@ register_routes(app)
 app.register_blueprint(env_editor_bp)
 
 # 打印初始信息
-logger.info(f"基础对话使用的模型: {BASE_CHAT_MODEL}")
+logger.info(f"基础对话使用的模型: {config.BASE_CHAT_MODEL}")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1].lower() == '--test':

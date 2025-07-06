@@ -26,7 +26,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.search.models import SearchRequest, QueryKeys
-from config.base_config import AVAILABLE_EXTENSIONS
+from config import base_config as config
 from config.logging_config import logger
 from app.utils.i18n import i18n
 
@@ -303,7 +303,7 @@ def download_file(url):
     # 检查文件扩展名
     file_name = url.split('/')[-1]
     file_extension = Path(file_name).suffix.lower()
-    if file_extension not in AVAILABLE_EXTENSIONS:
+    if file_extension not in config.AVAILABLE_EXTENSIONS:
         return ''
     
     file_path = DOWNLOAD_FILE_PATH / file_name

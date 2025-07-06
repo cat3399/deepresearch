@@ -17,17 +17,7 @@ from app.search.models import SearchRequest, SearchResult, SearchResults
 from app.search.search_after_ai import deepscan, is_duplicate
 from app.search.search_searxng_api import search_api_worker
 from app.utils.black_url import URL_BLACKLIST
-from config.base_config import (
-    SEARCH_API_LIMIT,
-    MAX_DEEPRESEARCH_RESULTS,
-    MAX_STEPS_NUM,
-    SEARCH_KEYWORD_API_KEY,
-    SEARCH_KEYWORD_API_URL,
-    SEARCH_KEYWORD_MODEL,
-    EVALUATE_API_KEY,
-    EVALUATE_API_URL,
-    EVALUATE_MODEL,
-)
+from config import base_config as config
 from app.utils.i18n import i18n
 from config.logging_config import logger
 from app.utils.prompt import (DEEPRESEARCH_FIRST_PROMPT,
@@ -35,7 +25,7 @@ from app.utils.prompt import (DEEPRESEARCH_FIRST_PROMPT,
 from app.utils.tools import (format_search_plan, format_urls, get_time,
                              json2SearchRequests, response2json)
 
-client = OpenAI(api_key=SEARCH_KEYWORD_API_KEY, base_url=SEARCH_KEYWORD_API_URL)
+client = OpenAI(api_key=config.SEARCH_KEYWORD_API_KEY, base_url=config.SEARCH_KEYWORD_API_URL)
 # 日志配置在 config/logging_config.py 中统一管理
 
 
@@ -56,7 +46,7 @@ def _search_valuable_results(
     logger.info(f"开始搜索 - 目的: {search_purpose}")
 
     with ThreadPoolExecutor(
-        max_workers=SEARCH_API_LIMIT
+        max_workers=config.SEARCH_API_LIMIT
     ) as executor:
         futures = []
         for data in search_request.query_keys:
@@ -152,7 +142,7 @@ def generate_search_plan(messages: list[dict], web_reference: str = "", previous
         # print("previous_plan",previous_plan)
     try:
         llm_rsp = client.chat.completions.create(
-            model=SEARCH_KEYWORD_MODEL,
+            model=config.SEARCH_KEYWORD_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
             stream=False,
@@ -202,7 +192,7 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
         return SearchResults(search_request=search_request, results=[])
 
     # 筛选有价值的URL
-    max_valuable_urls = MAX_DEEPRESEARCH_RESULTS
+    max_valuable_urls = config.MAX_DEEPRESEARCH_RESULTS
     value_url_prompt = GET_VALUE_URL_PROMPT.substitute(
         current_time=get_time(),
         search_results=search_results.to_str(),
@@ -212,9 +202,9 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
     )
     # print("value_url_prompt: ",value_url_prompt)
     try:
-        client = OpenAI(api_key=EVALUATE_API_KEY, base_url=EVALUATE_API_URL)
+        client = OpenAI(api_key=config.EVALUATE_API_KEY, base_url=config.EVALUATE_API_URL)
         llm_rsp_value = client.chat.completions.create(
-            model=EVALUATE_MODEL,
+            model=config.EVALUATE_MODEL,
             messages=[{"role": "user", "content": value_url_prompt}],
             temperature=0.1,
             stream=False,
@@ -262,7 +252,7 @@ def _execute_search_plan(search_plan_step: dict, excluded_urls: list[str] = None
 def deepresearch_tool(messages: list[dict]):
     logger.info("开始深度研究")
     executed_search_plans = []
-    max_plan_iterations = MAX_STEPS_NUM
+    max_plan_iterations = config.MAX_STEPS_NUM
     accumulated_search_results = SearchResults()
     yield i18n('start_deep_research')
 

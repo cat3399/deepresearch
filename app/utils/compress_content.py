@@ -11,7 +11,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.utils.url2txt import url_to_markdown
-from config.base_config import COMPRESS_API_KEY,COMPRESS_MODEL,COMPRESS_API_URL,COMPRESS_API_TYPE
+from config import base_config as config
 from config.logging_config import logger
 from app.utils.prompt import SYSTEM_PROMPT_SUMMARY
 
@@ -85,7 +85,7 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
             
             for attempt in range(3):
                 try:
-                    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{COMPRESS_MODEL}:generateContent?key={COMPRESS_API_KEY}"
+                    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{config.COMPRESS_MODEL}:generateContent?key={config.COMPRESS_API_KEY}"
                     # 发送POST请求
                     response = requests.post(api_url, headers=headers, data=json.dumps(payload),timeout=180) # 三分钟超时
                     response.raise_for_status()
@@ -122,7 +122,7 @@ def by_gemini(url: str, user_input: str, title: str = "",target_type:str = '1') 
             
             try:
                 # 获取token消耗信息
-                logger.info(f"使用模型 {COMPRESS_MODEL}")
+                logger.info(f"使用模型 {config.COMPRESS_MODEL}")
                 if response_json and "usageMetadata" in response_json:
                     usage = response_json["usageMetadata"]
                     if "totalTokenCount" in usage:
@@ -192,7 +192,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
                 {'role':'user','content':f"用户需要的信息:{user_input}\n\n 网页的标题与摘要是{title} 网页的url是{url} 网页内容:{html_content[:70000:]}"}
             ]
             
-            client = OpenAI(api_key=COMPRESS_API_KEY,base_url=COMPRESS_API_URL)
+            client = OpenAI(api_key=config.COMPRESS_API_KEY,base_url=config.COMPRESS_API_URL)
             
             # 重试机制,最多重试3次,间隔1秒
             response_text = None
@@ -201,7 +201,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             for attempt in range(3):
                 try:
                     completion = client.chat.completions.create(
-                        model=COMPRESS_MODEL,
+                        model=config.COMPRESS_MODEL,
                         messages=messages,
                         temperature=0.1,
                     )
@@ -225,10 +225,10 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             try:
                 # 获取token消耗信息
                 if completion and completion.usage:
-                    logger.info(f"{COMPRESS_MODEL} token消耗: {completion.usage.total_tokens}")
+                    logger.info(f"{config.COMPRESS_MODEL} token消耗: {completion.usage.total_tokens}")
                 logger.info(f"网页:{url}")
-                logger.info(f"{COMPRESS_MODEL}处理耗时: {processing_time:.2f}秒")
-                logger.info(f"{COMPRESS_MODEL}处理速度: {len(response_text) / processing_time:.2f}字符/秒")
+                logger.info(f"{config.COMPRESS_MODEL}处理耗时: {processing_time:.2f}秒")
+                logger.info(f"{config.COMPRESS_MODEL}处理速度: {len(response_text) / processing_time:.2f}字符/秒")
                 logger.info(f"原始内容长度{html_len}")
                 logger.info(f"压缩后内容长度{len(response_text)}")
                 logger.info(f"压缩率{len(response_text)/html_len:.2f} \n")
@@ -244,7 +244,7 @@ def by_openai(url: str, user_input: str, title: str = "",target_type:str = '1'):
             return html_content
             
     except Exception as e:
-        logger.error(f"{COMPRESS_MODEL}处理失败: {str(e)}")
+        logger.error(f"{config.COMPRESS_MODEL}处理失败: {str(e)}")
         return ''
 
 
@@ -264,7 +264,7 @@ def compress_url_content(url: str, user_input: str, title: str = "",target_type:
         Exception: 当API调用或内容处理失败时
     """
     text = ""
-    if COMPRESS_API_TYPE == "GEMINI":
+    if config.COMPRESS_API_TYPE == "GEMINI":
         text = by_gemini(url,user_input,title,target_type)
     else:
         text = by_openai(url,user_input,title,target_type)

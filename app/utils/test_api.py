@@ -13,7 +13,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from app.utils.prompt import SEARCH_PROMPT
-from config.base_config import SEARCH_KEYWORD_API_KEY, SEARCH_KEYWORD_API_URL, SEARCH_KEYWORD_MODEL
+from config import base_config as config
 from config.logging_config import logger
 from app.utils.tools import get_time, response2json
 from app.chat.chat_summary import summary
@@ -56,8 +56,8 @@ def compress_url_content_test():
 def search_plan_test():
     """测试 AI 生成搜索计划的功能"""
     messages = [{'role': 'user', 'content': SEARCH_PROMPT.substitute(messages="[{'role': 'user', 'content': '帮我搜一下最近openai新发布的那个模型的信息'}]", current_time=get_time())}] 
-    client = OpenAI(api_key=SEARCH_KEYWORD_API_KEY, base_url=SEARCH_KEYWORD_API_URL)
-    llm_rsp = client.chat.completions.create(model=SEARCH_KEYWORD_MODEL, messages=messages, temperature=0.1)
+    client = OpenAI(api_key=config.SEARCH_KEYWORD_API_KEY, base_url=config.SEARCH_KEYWORD_API_URL)
+    llm_rsp = client.chat.completions.create(model=config.SEARCH_KEYWORD_MODEL, messages=messages, temperature=0.1)
     results = response2json(llm_rsp.choices[0].message.content)
     if results:
         return True
