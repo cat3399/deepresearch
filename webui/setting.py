@@ -54,6 +54,10 @@ def get_structured_config(env_path):
             "vars": [
                 {"key": "API_KEY", "type": "password", "placeholder": "用于访问本项目API的密钥,可设置多个,用逗号分隔"},
                 {"key": "ALL_IN_GEMINI_KEY", "type": "textarea", "placeholder": "一行一个或用逗号分隔多个Gemini Key"},
+                {"key": "APP_LANG", "type": "select", "options": ["", "zh", "en"], "placeholder": "zh"},
+                {"key": "MAX_SEARCH_RESULTS", "type": "number", "min": 1, "max": 1000, "placeholder": "默认 6"},
+                {"key": "MAX_DEEPRESEARCH_RESULTS", "type": "number", "min": 1, "max": 1000, "placeholder": "默认 3"},
+                {"key": "MAX_STEPS_NUM", "type": "number", "min": 1, "max": 1000, "placeholder": "默认 12"},
             ]
         },
         {
@@ -74,9 +78,6 @@ def get_structured_config(env_path):
                 {"key": "JINA_API_URL", "type": "text", "placeholder": "默认 https://r.jina.ai"},
                 {"key": "JINA_API_KEY", "type": "password", "placeholder": "Jina Reader API Key (jina_...)"},
                 {"key": "CRAWL_THREAD_NUM", "type": "number", "min": 1, "max": 20, "placeholder": "建议 3-10"},
-                {"key": "MAX_SEARCH_RESULTS", "type": "number", "min": 1, "max": 20, "placeholder": "默认 6"},
-                {"key": "MAX_DEEPRESEARCH_RESULTS", "type": "number", "min": 1, "max": 10, "placeholder": "默认 3"},
-                {"key": "MAX_STEPS_NUM", "type": "number", "min": 1, "max": 20, "placeholder": "默认 12"},
             ]
         },
         {
@@ -126,7 +127,6 @@ def get_structured_config(env_path):
             "title": "杂项", "icon": "fa-sliders-h",
             "vars": [
                 {"key": "HEARTBEAT_TIMEOUT", "type": "number", "min": 0, "placeholder": "单位:秒, 0为禁用"},
-                {"key": "APP_LANG", "type": "select", "options": ["", "zh", "en"], "placeholder": "zh"},
             ]
         }
     ]
