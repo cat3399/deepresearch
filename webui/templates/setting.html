@@ -12,7 +12,8 @@
             --primary-hover-color: #0056b3;
             --secondary-color: #6c757d;
             --secondary-hover-color: #5a6268;
-            --background-color: #f8f9fa;
+            /* 背景色微调，让卡片更突出 */
+            --background-color: #eef1f5;
             --card-background-color: #ffffff;
             --text-color: #333;
             --label-color: #212529;
@@ -24,110 +25,154 @@
             --danger-bg: #f8d7da;
             --danger-text: #721c24;
             --danger-border: #f5c6cb;
+            --test-button-color: #17a2b8;
+            --test-button-hover-color: #138496;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
             padding: 2em;
-            background-color: var(--background-color);
+            background: radial-gradient(circle at 50% 50%, #ffffff, var(--background-color));
+            background-attachment: fixed;
             color: var(--text-color);
+            min-height: 100vh;
         }
         .container {
-            max-width: 1200px; /* 增加容器宽度以适应双列布局 */
+            max-width: 1200px;
             margin: auto;
-            padding-bottom: 100px; /* 为悬浮按钮留出空间 */
+            padding-bottom: 100px;
+        }
+        /* 顶部提示栏：文档链接 */
+        .doc-banner {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1em 1.5em;
+            margin-bottom: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .doc-banner .doc-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75em;
+            color: var(--help-text-color);
+        }
+        .doc-banner .doc-info i {
+            color: var(--primary-color);
+        }
+        .doc-banner a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color .2s;
+        }
+        .doc-banner a:hover {
+            color: var(--primary-hover-color);
         }
         h1 {
             color: var(--text-color);
             text-align: center;
-            margin-bottom: 1.5em;
+            margin-bottom: 2em;
+            font-weight: 300;
+            position: relative;
+            padding-bottom: 0.5em;
+        }
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background-color: var(--primary-color);
+            border-radius: 2px;
         }
         .alert {
-            padding: 1em;
-            margin-bottom: 1em;
+            padding: 1em 1.5em;
+            margin-bottom: 1.5em;
             border-radius: 8px;
             border: 1px solid transparent;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
         }
-        .alert::before {
+        .alert-content {
+            display: flex;
+            align-items: center;
+        }
+        .alert-content::before {
             font-family: "Font Awesome 6 Free";
             font-weight: 900;
             margin-right: 10px;
         }
-        .alert-success {
-            background-color: var(--success-bg);
-            color: var(--success-text);
-            border-color: var(--success-border);
+        .alert-success { background-color: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+        .alert-success .alert-content::before { content: "\f058"; }
+        .alert-danger { background-color: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); }
+        .alert-danger .alert-content::before { content: "\f071"; }
+        .alert-close {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            color: inherit;
+            opacity: 0.7;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 0 0 10px;
         }
-        .alert-success::before { content: "\f058"; }
-        .alert-danger {
-            background-color: var(--danger-bg);
-            color: var(--danger-text);
-            border-color: var(--danger-border);
+        .alert-close:hover {
+            opacity: 1;
         }
-        .alert-danger::before { content: "\f071"; }
+        .alert.hiding {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
 
-        /* --- 核心修改1: 并排展示 --- */
-        .accordion {
-            display: grid;
-            /* 响应式网格布局：自动适应宽度，每列最小350px，最大1fr（平分空间） */
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 1.5rem; /* 卡片之间的间距 */
-        }
-
+        /* 卡片样式：增加轻微阴影与边框区分背景 */
         .accordion .card {
             background-color: var(--card-background-color);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 0; /* 网格布局不需要 margin-bottom */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
             overflow: hidden;
-            transition: box-shadow 0.2s;
         }
         .accordion .card:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
         .card-header {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
+            padding: 1.25rem 1.5rem;
+            cursor: default;
             display: flex;
             justify-content: space-between;
             align-items: center;
             user-select: none;
-            transition: background-color 0.2s ease-in-out;
-        }
-        .card-header:hover {
-            background-color: #f1f3f5;
+            background-color: transparent;
         }
         .card-header h2 {
             margin: 0;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
+            font-weight: 600;
             color: var(--label-color);
         }
         .card-header .icon {
-            margin-right: 10px;
-            color: var(--primary-color);
-        }
-        .card-header .accordion-icon {
-            transition: transform 0.3s ease-in-out;
-        }
-        .card.active .accordion-icon {
-            transform: rotate(90deg);
+            display: none;
         }
         .card-body {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
-            padding: 0 1.5rem;
-            border-top: 1px solid var(--border-color);
-        }
-        .card.active .card-body {
-            max-height: 5000px; /* 足够大的值 */
-            padding: 1.5rem;
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            border-top: 1px solid #e9ecef;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
         }
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0;
         }
         label {
             display: block;
@@ -145,18 +190,20 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 1rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s, padding 0.2s;
             background-color: #fff;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            border-width: 2px;
+            padding: calc(0.75em - 1px);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
         }
         textarea {
             min-height: 80px;
             resize: vertical;
             font-family: inherit;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
         }
         .help-text {
             font-size: 0.9em;
@@ -176,25 +223,24 @@
             padding-top: 1rem;
             margin-top: 1rem;
             text-align: right;
+            grid-column: 1 / -1;
         }
         .btn-test {
-            background-color: var(--secondary-color);
+            background-color: var(--test-button-color);
             padding: 0.6em 1.2em;
             font-size: 0.9em;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.2s;
         }
         .btn-test:hover {
-            background-color: var(--secondary-hover-color);
+            background-color: var(--test-button-hover-color);
+            transform: scale(1.05);
         }
-        .btn-test .fas {
-            margin-right: 5px;
-        }
+        .btn-test .fas { margin-right: 5px; }
 
-        /* --- 核心修改2: 醒目的悬浮保存按钮 --- */
         .fab-container {
             position: fixed;
             bottom: 30px;
@@ -220,21 +266,37 @@
             background-color: var(--primary-hover-color);
             transform: scale(1.1);
         }
+        .btn-save-fab:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- 文档提示横幅 -->
+        <div class="doc-banner">
+            <div class="doc-info">
+                <i class="fas fa-info-circle"></i>
+                <span>首次使用？请先阅读<strong>配置文档</strong>了解每个参数含义。</span>
+            </div>
+            <a href="https://github.com/cat3399/deepresearch?tab=readme-ov-file#3-%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F" target="_blank">
+                查看配置文档 <i class="fas fa-external-link-alt"></i>
+            </a>
+        </div>
+
         <h1><i class="fas fa-cogs"></i> 项目配置中心</h1>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }}">
+                        <div class="alert-content">{{ message }}</div>
+                        <button class="alert-close" onclick="this.parentElement.classList.add('hiding'); setTimeout(() => this.parentElement.remove(), 300);">&times;</button>
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <!-- 将表单的 id 设置为 config-form，以便悬浮按钮可以关联到它 -->
         <form id="config-form" action="{{ url_for('setting.save_config') }}" method="post">
             <div class="accordion">
             {% if config_data %}
@@ -245,7 +307,6 @@
                             <i class="fas {{ section.icon | default('fa-sliders-h') }} icon"></i>
                             <h2>{{ section.title }}</h2>
                         </div>
-                        <i class="fas fa-chevron-right accordion-icon"></i>
                     </div>
                     <div class="card-body">
                         {% for var in section.vars %}
@@ -253,7 +314,6 @@
                             <label for="{{ var.key }}">{{ var.key }}</label>
                             <div class="input-wrapper">
                                 
-                                <!-- 智能控件渲染逻辑 (无变化) -->
                                 {% if var.type == 'select' %}
                                     <select id="{{ var.key }}" name="{{ var.key }}">
                                         {% for option in var.options %}
@@ -272,7 +332,7 @@
                                            placeholder="{{ var.placeholder }}"
                                            {% if var.min is not none %}min="{{ var.min }}"{% endif %}
                                            {% if var.max is not none %}max="{{ var.max }}"{% endif %}>
-                                {% else %} {# 默认为 text 类型 #}
+                                {% else %}
                                     <input type="text" id="{{ var.key }}" name="{{ var.key }}" value="{{ var.value }}" placeholder="{{ var.placeholder }}">
                                 {% endif %}
 
@@ -285,12 +345,6 @@
 
                         {% if section.test_name %}
                         <div class="test-container">
-                            <!-- 
-                                核心修改3: 测试按钮
-                                1. 类型改为 "button" 以防止默认提交。
-                                2. 添加 "btn-run-test" class 用于JS选择。
-                                3. 使用 data-* 属性存储测试信息。
-                            -->
                             <button type="button" 
                                     class="btn-test btn-run-test" 
                                     data-test-name="{{ section.test_name }}" 
@@ -307,12 +361,8 @@
                 <p>未找到任何配置项或 `.env` 文件为空。</p>
             {% endif %}
             </div>
-
-            <!-- 原来的保存按钮被移除，由悬浮按钮替代 -->
-            
         </form>
         
-        <!-- 未关联的测试功能 (无变化) -->
         {% if unassociated_tests %}
         <div class="card" style="margin-top: 2rem;">
             <div class="card-header" style="cursor: default;">
@@ -321,8 +371,8 @@
                     <h2>其他测试</h2>
                 </div>
             </div>
-            <div class="card-body" style="max-height: 5000px; padding: 1.5rem;">
-                <form action="{{ url_for('setting.run_test_route') }}" method="post">
+            <div class="card-body" style="border-top: 1px solid #e9ecef;">
+                <form action="{{ url_for('setting.run_test_route') }}" method="post" style="grid-column: 1 / -1;">
                     <div class="form-group">
                         <label for="test_name">选择要测试的功能</label>
                         <select id="test_name" name="test_name" required>
@@ -342,53 +392,14 @@
 
     </div>
 
-    <!-- 核心修改2: 悬浮保存按钮的HTML结构 -->
     <div class="fab-container">
-        <!-- 使用 form="config-form" 属性关联到主表单 -->
         <button type="submit" form="config-form" class="btn-save-fab" title="保存全部配置">
             <i class="fas fa-save"></i>
         </button>
     </div>
 
-
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // --- 折叠面板逻辑 (无变化) ---
-            const accordionHeaders = document.querySelectorAll('.accordion .card-header');
-            if (accordionHeaders.length > 0) {
-                const firstCard = accordionHeaders[0].parentElement;
-                if (firstCard) {
-                    firstCard.classList.add('active');
-                    const firstCardBody = firstCard.querySelector('.card-body');
-                    if (firstCardBody) {
-                       firstCardBody.style.maxHeight = firstCardBody.scrollHeight + "px";
-                    }
-                }
-            }
-            accordionHeaders.forEach(header => {
-                header.addEventListener('click', () => {
-                    const card = header.parentElement;
-                    const cardBody = header.nextElementSibling;
-                    const isActive = card.classList.contains('active');
-                    
-                    // 关闭所有已打开的面板
-                    // accordionHeaders.forEach(h => {
-                    //     const c = h.parentElement;
-                    //     c.classList.remove('active');
-                    //     h.nextElementSibling.style.maxHeight = '0';
-                    // });
-
-                    // 打开或关闭当前点击的面板
-                    card.classList.toggle('active', !isActive);
-                    if (!isActive) {
-                        cardBody.style.maxHeight = cardBody.scrollHeight + "px";
-                    } else {
-                        cardBody.style.maxHeight = '0';
-                    }
-                });
-            });
-            
-            // --- 密码可见性切换 (无变化) ---
             const passwordToggles = document.querySelectorAll('.toggle-password');
             passwordToggles.forEach(toggle => {
                 toggle.addEventListener('click', () => {
@@ -400,39 +411,32 @@
                 });
             });
 
-            // --- 核心修改3: 测试前自动保存的JS逻辑 ---
             const testButtons = document.querySelectorAll('.btn-run-test');
             const mainForm = document.getElementById('config-form');
 
             testButtons.forEach(button => {
                 button.addEventListener('click', function(event) {
-                    event.preventDefault(); // 阻止按钮的默认行为
-
+                    event.preventDefault(); 
                     const testName = this.dataset.testName;
                     const testUrl = this.dataset.testUrl;
                     
-                    // 禁用按钮，防止重复点击
                     this.disabled = true;
                     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在保存...';
 
-                    // 1. 使用 fetch API 异步提交保存表单
                     fetch(mainForm.action, {
                         method: 'POST',
                         body: new FormData(mainForm)
                     })
                     .then(response => {
                         if (!response.ok) {
-                            // 如果保存失败，抛出错误
                             throw new Error('保存配置失败，请检查网络或后台日志。');
                         }
-                        return response.text(); // 或者 response.json() 如果后端返回json
+                        return response.text(); 
                     })
                     .then(data => {
-                        // 2. 保存成功后，执行测试
                         console.log('配置已保存，即将运行测试...');
                         this.innerHTML = '<i class="fas fa-vial"></i> 正在测试...';
 
-                        // 创建一个隐藏的表单来提交测试请求
                         const hiddenForm = document.createElement('form');
                         hiddenForm.method = 'post';
                         hiddenForm.action = testUrl;
@@ -444,10 +448,9 @@
 
                         hiddenForm.appendChild(hiddenInput);
                         document.body.appendChild(hiddenForm);
-                        hiddenForm.submit(); // 提交隐藏表单，页面会跳转并显示测试结果的flash消息
+                        hiddenForm.submit();
                     })
                     .catch(error => {
-                        // 3. 如果过程中出现任何错误，提示用户并恢复按钮
                         console.error('操作失败:', error);
                         alert(error.message);
                         this.disabled = false;
